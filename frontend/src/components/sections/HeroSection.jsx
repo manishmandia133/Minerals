@@ -93,7 +93,7 @@ export default function HeroSection({ activeMineral, setActiveMineral, onNavigat
         <div style={s.viewerWrap}>
           <video
             className="reveal-init reveal-active"
-            src="/videos/reel-desktop.mp4"
+            src={`${import.meta.env.BASE_URL}videos/reel-desktop.mp4`}
             autoPlay
             loop
             muted

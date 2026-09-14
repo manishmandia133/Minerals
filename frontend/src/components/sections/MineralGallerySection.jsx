@@ -5,11 +5,11 @@ import React from 'react';
 import AccordionGallery from '../common/AccordionGallery';
 
 const ORE_ITEMS = [
-  { image: '/minerals/lithium.jpg', label: 'Lithium Ore', alt: 'Lithium ore specimen' },
-  { image: '/minerals/cobalt.jpg', label: 'Cobalt Ore', alt: 'Raw cobalt ore with blue translucent crystals' },
-  { image: '/minerals/graphite.jpg', label: 'Graphite Ore', alt: 'Graphite ore mine face' },
-  { image: '/minerals/gallium.jpg', label: 'Gallium Metal', alt: 'High-purity gallium metal' },
-  { image: '/minerals/iron.webp', label: 'Iron Ore', alt: 'Iron ore deposit' },
+  { image: `${import.meta.env.BASE_URL}minerals/lithium.jpg`, label: 'Lithium Ore', alt: 'Lithium ore specimen' },
+  { image: `${import.meta.env.BASE_URL}minerals/cobalt.jpg`, label: 'Cobalt Ore', alt: 'Raw cobalt ore with blue translucent crystals' },
+  { image: `${import.meta.env.BASE_URL}minerals/graphite.jpg`, label: 'Graphite Ore', alt: 'Graphite ore mine face' },
+  { image: `${import.meta.env.BASE_URL}minerals/gallium.jpg`, label: 'Gallium Metal', alt: 'High-purity gallium metal' },
+  { image: `${import.meta.env.BASE_URL}minerals/iron.webp`, label: 'Iron Ore', alt: 'Iron ore deposit' },
 ];
 
 export default function MineralGallerySection() {

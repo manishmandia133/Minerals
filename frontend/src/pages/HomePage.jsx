@@ -5,8 +5,6 @@ import React, { useState } from 'react';
 import HeroSection from '../components/sections/HeroSection';
 import TechMappingSection from '../components/sections/TechMappingSection';
 import MineralGallerySection from '../components/sections/MineralGallerySection';
-import OrganisationsSection from '../components/sections/OrganisationsSection';
-import TechnologyGapsSection from '../components/sections/TechnologyGapsSection';
 import { useScrollReveal } from '../components/common/useScrollReveal';
 import { Link } from 'react-router-dom';
 import {
@@ -173,16 +171,6 @@ export default function HomePage() {
       {/* Critical Mineral Ore Gallery */}
       <div className="reveal-init">
         <MineralGallerySection />
-      </div>
-
-      {/* Leading Organisations Section */}
-      <div className="reveal-init">
-        <OrganisationsSection />
-      </div>
-
-      {/* Technology Gaps & Emerging Areas */}
-      <div className="reveal-init">
-        <TechnologyGapsSection />
       </div>
     </div>
   );

@@ -14,6 +14,7 @@ export default function Header() {
     { path: '/patents', label: 'Patents' },
     { path: '/research', label: 'Research' },
     { path: '/trends', label: 'Trends & Velocity' },
+    { path: '/ecosystem', label: 'Ecosystem' },
     { path: '/chat', label: 'AI Chat' },
   ];
 

@@ -9,6 +9,7 @@ import HomePage from './pages/HomePage';
 import PatentExplorerPage from './pages/PatentExplorerPage';
 import ResearchExplorerPage from './pages/ResearchExplorerPage';
 import PatentTrendsPage from './pages/PatentTrendsPage';
+import EcosystemPage from './pages/EcosystemPage';
 import AIChatPage from './pages/AIChatPage';
 
 // Scroll to top on route transition
@@ -25,7 +26,7 @@ function ScrollToTop() {
 // Single global footer — identical on every page
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <ScrollToTop />
       <div style={{ background: 'var(--color-lavender-mist)', minHeight: '100vh', color: 'var(--color-ink)' }}>
         <Header />
@@ -36,6 +37,7 @@ export default function App() {
             <Route path="/patents" element={<PatentExplorerPage />} />
             <Route path="/research" element={<ResearchExplorerPage />} />
             <Route path="/trends" element={<PatentTrendsPage />} />
+            <Route path="/ecosystem" element={<EcosystemPage />} />
             <Route path="/chat" element={<AIChatPage />} />
             <Route path="*" element={<HomePage />} />
           </Routes>

@@ -72,15 +72,6 @@ export default function AIChatPage() {
     }
   }, [messages, isGenerating]);
 
-  const samplePrompts = [
-    'What patents exist for Lithium extraction in India?',
-    'Which patent covers Cobalt recycling from spent EV batteries?',
-    'Show me Rare Earth permanent magnet patents and dysprosium reduction',
-    'What is the highest TRL patent filed by CSIR-NML?',
-    'What are India’s major technology gaps in graphite anode manufacturing?',
-    'Explain patent IN 202411048912 A',
-  ];
-
   const generateAIResponse = (query) => {
     const q = query.toLowerCase();
 
@@ -332,8 +323,7 @@ export default function AIChatPage() {
           <div
             style={{
               padding: '12px 20px',
-              borderBottom: '1px solid var(--color-haze)',
-              background: 'var(--color-lavender-mist)',
+              background: 'var(--color-paper-white)',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
@@ -675,45 +665,10 @@ export default function AIChatPage() {
             )}
           </div>
 
-          {/* Quick Prompts Bar */}
-          <div
-            style={{
-              padding: '8px 20px',
-              borderTop: '1px solid var(--color-haze)',
-              background: 'var(--color-lavender-mist)',
-              display: 'flex',
-              gap: '8px',
-              overflowX: 'auto',
-            }}
-          >
-            {samplePrompts.map((prompt, i) => (
-              <button
-                key={i}
-                onClick={() => handleUserSend(prompt)}
-                style={{
-                  whiteSpace: 'nowrap',
-                  padding: '5px 12px',
-                  borderRadius: '20px',
-                  background: 'var(--color-paper-white)',
-                  border: '1px solid var(--color-haze)',
-                  fontSize: '12px',
-                  color: 'var(--color-ink)',
-                  cursor: 'pointer',
-                  transition: 'border-color 0.2s',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--color-electric-indigo)')}
-                onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--color-haze)')}
-              >
-                {prompt}
-              </button>
-            ))}
-          </div>
-
           {/* Input Box Footer */}
           <div
             style={{
               padding: '16px 20px 10px',
-              borderTop: '1px solid var(--color-haze)',
               background: 'var(--color-paper-white)',
             }}
           >
