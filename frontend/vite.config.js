@@ -4,9 +4,12 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  // Repository name — required so built asset URLs work under
-  // https://<user>.github.io/Minerals/
-  base: '/Minerals/',
+  // GitHub Pages project sites live under /<repo>/, but Vercel serves
+  // from the domain root — Vercel sets process.env.VERCEL during builds,
+  // so pick the base accordingly. Site URLs:
+  //   GH Pages: https://<user>.github.io/Minerals/
+  //   Vercel:   https://<project>.vercel.app/
+  base: process.env.VERCEL ? '/' : '/Minerals/',
   plugins: [
     react(),
     tailwindcss(),
