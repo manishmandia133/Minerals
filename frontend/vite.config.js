@@ -5,8 +5,8 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig({
   // Repository name — required so built asset URLs work under
-  // https://<user>.github.io/Minerals-/
-  base: '/Minerals-/',
+  // https://<user>.github.io/Minerals/
+  base: '/Minerals/',
   plugins: [
     react(),
     tailwindcss(),

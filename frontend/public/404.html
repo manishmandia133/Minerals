@@ -5,10 +5,10 @@
     <title>MINERALIS</title>
     <script>
       // Single-Page-App fallback for GitHub Pages project site.
-      // Redirects /Minerals-/<route> to /Minerals-/?/<route> so index.html
+      // Redirects /Minerals/<route> to /Minerals/?/<route> so index.html
       // can boot the router and restore the original path.
       (function () {
-        var pathSegmentsToKeep = 1; // keep "/Minerals-"
+        var pathSegmentsToKeep = 1; // keep "/Minerals"
         var l = window.location;
         l.replace(
           l.protocol +
