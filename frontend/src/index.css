@@ -1,0 +1,615 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   LUSION DESIGN SYSTEM — LIGHT THEME
+   Exact tokens from lusion.co style reference
+   ========================================================================== */
+
+@font-face {
+  font-family: 'Aeonik';
+  src: url('/fonts/Aeonik-Regular.woff2') format('woff2'),
+       url('https://lusion.co/assets/fonts/Aeonik-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Aeonik';
+  src: url('/fonts/Aeonik-Medium.woff2') format('woff2'),
+       url('https://lusion.co/assets/fonts/Aeonik-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Aeonik';
+  src: url('/fonts/Aeonik-RegularItalic.woff2') format('woff2'),
+       url('https://lusion.co/assets/fonts/Aeonik-RegularItalic.woff2') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root {
+  /* Colors — Lusion exact */
+  --color-lavender-mist: #f0f1fa;
+  --color-paper-white: #ffffff;
+  --color-ink: #000000;
+  --color-graphite: #2b2e3a;
+  --color-haze: #e4e6ef;
+  --color-slate-hollow: #34393f;
+  --color-electric-indigo: #1a2ffb;
+  --color-acid-lime: #c1ff00;
+
+  /* Typography */
+  --font-aeonik: 'Aeonik', 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-main: var(--font-aeonik);
+
+  /* Layout */
+  --page-max-width: 1400px;
+  --section-gap: 72px;
+  --card-padding: 24px;
+
+  /* Border radius — exact Lusion values */
+  --radius-sm: 3px;
+  --radius-cards: 15px;
+  --radius-inputs: 18px;
+  --radius-buttons: 87.5px;
+  --radius-image: 100px;
+
+  /* Shadows — 4% whisper only */
+  --shadow-md: rgba(0, 0, 0, 0.04) 0px 6px 10px 0px, rgba(0, 0, 0, 0.04) 0px 2px 4px 0px;
+}
+
+/* ==========================================================================
+   RESET
+   ========================================================================== */
+
+/* NOTE: reset lives in @layer base so Tailwind utilities (mx-auto, px-*, -mb-*, …) keep working.
+   Unlayered author CSS beats layered utilities in the cascade. */
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+html {
+  font-family: var(--font-aeonik);
+  background-color: var(--color-lavender-mist);
+  color: var(--color-ink);
+  line-height: 1.4;
+  letter-spacing: -0.02em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+body {
+  background-color: var(--color-lavender-mist);
+  color: var(--color-ink);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-aeonik);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
+}
+
+/* ==========================================================================
+   SCROLLBAR — minimal, light
+   ========================================================================== */
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--color-haze); }
+::-webkit-scrollbar-thumb { background: var(--color-graphite); border-radius: 9999px; }
+
+/* ==========================================================================
+   LAYOUT PRIMITIVES
+   ========================================================================== */
+
+.page-container {
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+  padding: 0 40px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+img, video {
+  max-width: 100%;
+}
+
+section {
+  max-width: 100vw;
+  overflow-x: clip;
+}
+
+@media (max-width: 768px) {
+  .page-container { padding: 0 20px; }
+}
+
+.section-spacing {
+  padding-top: var(--section-gap);
+  padding-bottom: var(--section-gap);
+}
+
+/* ==========================================================================
+   PILL BUTTON — Lusion signature graphite fill
+   ========================================================================== */
+
+.btn-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-aeonik);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  padding: 14px 24px;
+  border-radius: var(--radius-buttons);
+  background: var(--color-graphite);
+  color: var(--color-paper-white);
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: opacity 0.2s ease;
+  box-shadow: var(--shadow-md);
+  line-height: 1;
+}
+
+.btn-pill:hover { opacity: 0.82; }
+
+.btn-pill-ghost {
+  background: transparent;
+  color: var(--color-ink);
+  box-shadow: none;
+  padding: 14px 20px;
+}
+
+.btn-pill-ghost:hover { opacity: 0.55; }
+
+/* ==========================================================================
+   CARDS
+   ========================================================================== */
+
+.card {
+  background: var(--color-paper-white);
+  border-radius: var(--radius-cards);
+  padding: var(--card-padding);
+  border: 1px solid var(--color-haze);
+  box-shadow: var(--shadow-md);
+}
+
+/* ==========================================================================
+   IMAGE CONTAINER — 100px radius (Lusion signature)
+   ========================================================================== */
+
+.image-container {
+  border-radius: var(--radius-image);
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   SECTION TICKS
+   ========================================================================== */
+
+.section-ticks {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  color: var(--color-ink);
+  font-size: 16px;
+  letter-spacing: -0.02em;
+}
+
+/* ==========================================================================
+   INPUTS
+   ========================================================================== */
+
+.input-field {
+  font-family: var(--font-aeonik);
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  background: var(--color-paper-white);
+  border: 1px solid var(--color-haze);
+  border-radius: var(--radius-inputs);
+  padding: 14px 18px;
+  color: var(--color-ink);
+  outline: none;
+  width: 100%;
+  transition: border-color 0.2s ease;
+}
+
+.input-field:focus { border-color: var(--color-electric-indigo); }
+.input-field::placeholder { color: #9ca3af; }
+
+/* ==========================================================================
+   BADGE / TAG
+   ========================================================================== */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-aeonik);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--color-haze);
+  color: var(--color-graphite);
+}
+
+.badge-indigo {
+  background: rgba(26, 47, 251, 0.08);
+  color: var(--color-electric-indigo);
+}
+
+.badge-critical {
+  background: rgba(220, 38, 38, 0.08);
+  color: #dc2626;
+}
+
+.badge-emerald {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+}
+
+.badge-amber {
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+}
+
+.badge-rose {
+  background: rgba(244, 63, 94, 0.1);
+  color: #e11d48;
+}
+
+.badge-purple {
+  background: rgba(139, 92, 246, 0.1);
+  color: #7c3aed;
+}
+
+.badge-cyan {
+  background: rgba(6, 182, 212, 0.1);
+  color: #0891b2;
+}
+
+/* ==========================================================================
+   BUTTON VARIANTS
+   ========================================================================== */
+
+.btn-pill-indigo {
+  background: var(--color-electric-indigo);
+  color: var(--color-paper-white);
+}
+
+.btn-pill-indigo:hover {
+  opacity: 0.88;
+}
+
+.btn-pill-outline {
+  background: transparent;
+  color: var(--color-ink);
+  border: 1px solid var(--color-haze);
+  box-shadow: none;
+}
+
+.btn-pill-outline:hover {
+  background: var(--color-paper-white);
+  border-color: var(--color-ink);
+}
+
+/* ==========================================================================
+   TABS & CHIPS
+   ========================================================================== */
+
+.tab-pill {
+  padding: 8px 18px;
+  border-radius: var(--radius-buttons);
+  font-family: var(--font-aeonik);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  border: 1px solid var(--color-haze);
+  background: var(--color-paper-white);
+  color: var(--color-graphite);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.tab-pill:hover {
+  border-color: var(--color-graphite);
+  color: var(--color-ink);
+}
+
+.tab-pill.active {
+  background: var(--color-graphite);
+  color: var(--color-paper-white);
+  border-color: var(--color-graphite);
+}
+
+/* ==========================================================================
+   MODAL / DOSSIER
+   ========================================================================== */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(14, 16, 23, 0.45);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.modal-sheet {
+  background: var(--color-paper-white);
+  border: 1px solid var(--color-haze);
+  border-radius: 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12);
+  width: 100%;
+  max-width: 720px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  font-family: var(--font-aeonik);
+}
+
+/* ==========================================================================
+   DIVIDER
+   ========================================================================== */
+
+.divider {
+  width: 100%;
+  height: 1px;
+  background: var(--color-haze);
+}
+
+/* ==========================================================================
+   LUSION ANIMATION SYSTEM — FLUID SPRINGS & SCROLL REVEALS
+   ========================================================================== */
+
+@keyframes lusionFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes pulseDot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0.5; }
+}
+
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-float {
+  animation: lusionFloat 6s ease-in-out infinite;
+}
+
+.pulse-dot {
+  animation: pulseDot 2.2s infinite ease-in-out;
+}
+
+/* AI chat typing indicator */
+.typing-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.typing-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-electric-indigo);
+  display: inline-block;
+  animation: typingBlink 1.2s infinite ease-in-out;
+}
+
+.typing-dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.typing-dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes typingBlink {
+  0%, 60%, 100% {
+    opacity: 0.2;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+.animate-spin-slow {
+  animation: spinSlow 20s linear infinite;
+}
+
+/* Scroll reveal class with Lusion exact cubic-bezier */
+.reveal-init {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1), transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.reveal-active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger delays */
+.stagger-1 { transition-delay: 0.05s; }
+.stagger-2 { transition-delay: 0.12s; }
+.stagger-3 { transition-delay: 0.18s; }
+.stagger-4 { transition-delay: 0.25s; }
+
+/* Interactive cards with fluid physics */
+.card-interactive {
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+  will-change: transform, box-shadow;
+}
+
+.card-interactive:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 32px -4px rgba(0, 0, 0, 0.06), 0 4px 10px -2px rgba(0, 0, 0, 0.03);
+  border-color: var(--color-electric-indigo);
+}
+
+/* Button micro-interactions */
+.btn-pill svg {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-pill:hover svg {
+  transform: translateX(3px);
+}
+
+/* ==========================================================================
+   ORGANISATIONS & TECHNOLOGY GAPS SPECIALIZED STYLES
+   ========================================================================== */
+
+.org-card {
+  background: var(--color-paper-white);
+  border: 1px solid var(--color-haze);
+  border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: var(--shadow-md);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  margin-bottom: 14px;
+  display: block;
+  width: 100%;
+}
+
+.org-card:hover {
+  border-color: rgba(43, 46, 58, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.06);
+}
+
+.org-card.selected {
+  border-color: var(--color-electric-indigo);
+  background: #ffffff;
+  box-shadow: 0 12px 28px -4px rgba(26, 47, 251, 0.14), 0 2px 6px -1px rgba(26, 47, 251, 0.06);
+  transform: translateY(-2px);
+}
+
+.gap-card {
+  background: var(--color-paper-white);
+  border: 1px solid var(--color-haze);
+  border-radius: 16px;
+  padding: 22px 24px;
+  box-shadow: var(--shadow-md);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  margin-bottom: 14px;
+  display: block;
+  width: 100%;
+}
+
+.gap-card:hover {
+  border-color: rgba(43, 46, 58, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.06);
+}
+
+.gap-card.selected {
+  border-color: var(--color-electric-indigo);
+  background: #ffffff;
+  box-shadow: 0 12px 28px -4px rgba(26, 47, 251, 0.14), 0 2px 6px -1px rgba(26, 47, 251, 0.06);
+  transform: translateY(-2px);
+}
+
+.dossier-card {
+  background: var(--color-paper-white);
+  border: 1px solid var(--color-haze);
+  border-radius: 20px;
+  padding: 28px;
+  box-shadow: var(--shadow-md);
+}
+
+.mineral-chip {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-aeonik);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  background: var(--color-lavender-mist);
+  color: var(--color-graphite);
+  border: 1px solid var(--color-haze);
+}
+
+.partner-chip {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-aeonik);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  padding: 5px 12px;
+  border-radius: 10px;
+  background: var(--color-lavender-mist);
+  color: var(--color-ink);
+  border: 1px solid var(--color-haze);
+}
+
+.stat-box-dossier {
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: var(--color-lavender-mist);
+  border: 1px solid var(--color-haze);
+}
+
+/* Upgraded footer (footer-section-5): blue theme keeps white typography,
+   white theme (AI chat page) uses ink typography */
+.footer-section-5:not(.footer-white) h1,
+.footer-section-5:not(.footer-white) h2,
+.footer-section-5:not(.footer-white) h3 {
+  color: #F0F1FA;
+}
+
+.footer-section-5:not(.footer-white) h1.text-transparent {
+  color: transparent;
+}
+
+.footer-section-5.footer-white h1,
+.footer-section-5.footer-white h2,
+.footer-section-5.footer-white h3 {
+  color: var(--color-ink);
+}
+
+.footer-section-5.footer-white h1.text-transparent {
+  color: transparent;
+}
+
+
+
+

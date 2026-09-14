@@ -1,0 +1,53 @@
+.scroll-reveal {
+  margin: 20px 0;
+}
+
+.scroll-reveal-text {
+  font-size: clamp(1.6rem, 4vw, 3rem);
+  line-height: 1.5;
+  font-weight: 600;
+}
+
+.word {
+  display: inline-block;
+}
+
+/* Hero subheadline variant — small centered graphite copy */
+.scroll-reveal.hero-reveal {
+  margin: 0 auto 48px;
+  max-width: 480px;
+  text-align: center;
+}
+
+.scroll-reveal-text.hero-reveal-text {
+  font-size: 16px;
+  line-height: 1.4;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--color-graphite);
+}
+
+/* Section description variant — small left-aligned graphite copy */
+.scroll-reveal.section-reveal {
+  margin: 0;
+  max-width: 480px;
+  text-align: left;
+}
+
+.scroll-reveal-text.section-reveal-text {
+  font-size: 14px;
+  line-height: 1.55;
+  font-weight: 400;
+  letter-spacing: normal;
+  color: var(--color-graphite);
+}
+
+.scroll-reveal-text.section-reveal-text.section-reveal-lg {
+  font-size: 16px;
+  letter-spacing: -0.02em;
+}
+
+.scroll-reveal.section-reveal:has(.section-reveal-lg) {
+  margin-top: 12px;
+  max-width: 560px;
+}
