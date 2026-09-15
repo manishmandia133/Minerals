@@ -27,7 +27,7 @@ export default defineConfig({
               try {
                 res.writeHead(503, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ ok: false, offline: true }));
-              } catch (_) {}
+              } catch {}
             }
           });
         },

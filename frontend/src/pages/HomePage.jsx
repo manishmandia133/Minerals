@@ -5,6 +5,8 @@ import React, { useState } from 'react';
 import HeroSection from '../components/sections/HeroSection';
 import TechMappingSection from '../components/sections/TechMappingSection';
 import MineralGallerySection from '../components/sections/MineralGallerySection';
+import SplitText from '../components/bits/SplitText';
+import SpotlightCard from '../components/bits/SpotlightCard';
 import { useScrollReveal } from '../components/common/useScrollReveal';
 import { Link } from 'react-router-dom';
 import {
@@ -13,21 +15,10 @@ import {
   TrendingUp,
   Sparkles,
   ArrowUpRight,
-  ShieldCheck,
-  Layers,
-  ChevronRight,
-  Zap,
 } from 'lucide-react';
 export default function HomePage() {
   const [activeMineral, setActiveMineral] = useState('lithium');
   useScrollReveal();
-
-  const handleNavigate = (sectionId) => {
-    const elem = document.getElementById(sectionId);
-    if (elem) {
-      elem.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
 
   const portalCards = [
     {
@@ -70,7 +61,6 @@ export default function HomePage() {
       <HeroSection
         activeMineral={activeMineral}
         setActiveMineral={setActiveMineral}
-        onNavigate={handleNavigate}
       />
 
       {/* Quick Portals Navigation Section with Scroll Reveal */}
@@ -83,7 +73,16 @@ export default function HomePage() {
                 <span className="badge">Dedicated Workspaces</span>
               </div>
               <h2 style={{ fontSize: '32px', fontWeight: 500, letterSpacing: '-0.02em', color: 'var(--color-ink)' }}>
-                Explore Dedicated Intelligence Modules
+                <SplitText
+                  text="Explore Dedicated Intelligence Modules"
+                  tag="span"
+                  splitType="words"
+                  textAlign="left"
+                  delay={45}
+                  duration={0.9}
+                  from={{ opacity: 0, y: 28 }}
+                  to={{ opacity: 1, y: 0 }}
+                />
               </h2>
             </div>
             <p style={{ color: 'var(--color-graphite)', fontSize: '14px', maxWidth: '480px' }}>
@@ -99,16 +98,19 @@ export default function HomePage() {
                 <Link
                   key={portal.title}
                   to={portal.path}
-                  className={`card card-interactive reveal-init stagger-${idx + 1}`}
-                  style={{
-                    textDecoration: 'none',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    padding: '28px',
-                    border: '1px solid var(--color-haze)',
-                  }}
+                  style={{ textDecoration: 'none', display: 'block' }}
                 >
+                  <SpotlightCard
+                    className={`card card-interactive reveal-init stagger-${idx + 1}`}
+                    spotlightColor="rgba(26, 47, 251, 0.09)"
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      padding: '28px',
+                      height: '100%',
+                    }}
+                  >
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                       <div
@@ -156,6 +158,7 @@ export default function HomePage() {
                     <span>Launch Module</span>
                     <ArrowUpRight style={{ width: '15px', height: '15px' }} />
                   </div>
+                  </SpotlightCard>
                 </Link>
               );
             })}
@@ -163,14 +166,14 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Technology Mapping Section */}
-      <div className="reveal-init">
-        <TechMappingSection />
-      </div>
-
       {/* Critical Mineral Ore Gallery */}
       <div className="reveal-init">
         <MineralGallerySection />
+      </div>
+
+      {/* Technology Mapping Section */}
+      <div className="reveal-init">
+        <TechMappingSection />
       </div>
     </div>
   );

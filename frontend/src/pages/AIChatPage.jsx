@@ -3,14 +3,12 @@
 // Provides conversational analysis across all Indian critical mineral patents, research, and TRLs
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
-import { PATENT_RECORDS, CRITICAL_MINERALS, LEADING_ORGANISATIONS, TECHNOLOGY_GAPS } from '../data/mineralsData';
-import { RESEARCH_PUBLICATIONS } from '../data/researchData';
+import { useSearchParams } from 'react-router-dom';
+import { PATENT_RECORDS, LEADING_ORGANISATIONS } from '../data/mineralsData';
 import { useScrollReveal } from '../components/common/useScrollReveal';
 import {
   Sparkles,
   Send,
-  Bot,
   User,
   ExternalLink,
   RefreshCw,
@@ -18,13 +16,9 @@ import {
   Check,
   Download,
   Trash2,
-  Database,
-  ArrowRight,
-  ShieldCheck,
   ChevronRight,
   X,
   FileText,
-  Search,
 } from 'lucide-react';
 
 export default function AIChatPage() {
@@ -51,17 +45,6 @@ export default function AIChatPage() {
 
   const [messages, setMessages] = useState([initialGreeting]);
   const lastAssistantIdx = messages.reduce((acc, m, i) => (m.role === 'assistant' ? i : acc), -1);
-
-  useEffect(() => {
-    if (initialPatent) {
-      const match = PATENT_RECORDS.find((p) => p.publicationNumber.toLowerCase().includes(initialPatent.toLowerCase()));
-      if (match) {
-        handleUserSend(`Please give me a comprehensive briefing on patent ${match.publicationNumber}: "${match.title}"`);
-      }
-    } else if (initialQuery) {
-      handleUserSend(initialQuery);
-    }
-  }, [initialPatent, initialQuery]);
 
   useEffect(() => {
     if (chatScrollContainerRef.current) {
@@ -239,6 +222,26 @@ export default function AIChatPage() {
 
     }, 600);
   };
+
+  // Auto-send shared patent links / prefilled queries (declared after
+  // handleUserSend so the callback is always initialized before use).
+  // Latest-handler ref: the auto-send effect below intentionally runs only
+  // when the shared link/query changes, never on unrelated re-renders.
+  const handleUserSendRef = useRef(null);
+  useEffect(() => {
+    handleUserSendRef.current = handleUserSend;
+  });
+
+  useEffect(() => {
+    if (initialPatent) {
+      const match = PATENT_RECORDS.find((p) => p.publicationNumber.toLowerCase().includes(initialPatent.toLowerCase()));
+      if (match) {
+        handleUserSendRef.current(`Please give me a comprehensive briefing on patent ${match.publicationNumber}: "${match.title}"`);
+      }
+    } else if (initialQuery) {
+      handleUserSendRef.current(initialQuery);
+    }
+  }, [initialPatent, initialQuery]);
 
   const handleCopy = (text, index) => {
     navigator.clipboard.writeText(text);

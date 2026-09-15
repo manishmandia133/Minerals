@@ -61,6 +61,14 @@
 
   /* Shadows — 4% whisper only */
   --shadow-md: rgba(0, 0, 0, 0.04) 0px 6px 10px 0px, rgba(0, 0, 0, 0.04) 0px 2px 4px 0px;
+  --shadow-subtle: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.03);
+  --shadow-float: 0 12px 28px -4px rgba(0, 0, 0, 0.07), 0 4px 10px -2px rgba(0, 0, 0, 0.03);
+  --shadow-glow-indigo: 0 0 0 3px rgba(26, 47, 251, 0.16);
+
+  /* Animation & Motion Tokens (Emil Kowalski / Animate skill) */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* ==========================================================================
@@ -110,6 +118,26 @@ h1, h2, h3, h4, h5, h6 {
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: var(--color-haze); }
 ::-webkit-scrollbar-thumb { background: var(--color-graphite); border-radius: 9999px; }
+
+/* ==========================================================================
+   SITE-WIDE POLISH — selection, focus, anchor offset
+   ========================================================================== */
+
+::selection {
+  background: rgba(26, 47, 251, 0.14);
+  color: var(--color-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-electric-indigo);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* Anchored sections clear the sticky header */
+section[id] {
+  scroll-margin-top: 88px;
+}
 
 /* ==========================================================================
    LAYOUT PRIMITIVES
@@ -468,6 +496,21 @@ section {
 .stagger-3 { transition-delay: 0.18s; }
 .stagger-4 { transition-delay: 0.25s; }
 
+/* Mount entrance for filter-driven grids (no observer needed — runs on mount,
+   so cards can never get stuck invisible after filtering/searching). */
+@keyframes gridEnter {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.grid-enter {
+  animation: gridEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grid-enter { animation: none; }
+}
+
 /* Interactive cards with fluid physics */
 .card-interactive {
   transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
@@ -477,7 +520,6 @@ section {
 .card-interactive:hover {
   transform: translateY(-4px);
   box-shadow: 0 16px 32px -4px rgba(0, 0, 0, 0.06), 0 4px 10px -2px rgba(0, 0, 0, 0.03);
-  border-color: var(--color-electric-indigo);
 }
 
 /* Button micro-interactions */
@@ -507,15 +549,14 @@ section {
 }
 
 .org-card:hover {
-  border-color: rgba(43, 46, 58, 0.4);
   transform: translateY(-2px);
-  box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.08);
 }
 
 .org-card.selected {
-  border-color: var(--color-electric-indigo);
+  border-color: rgba(43, 46, 58, 0.55);
   background: #ffffff;
-  box-shadow: 0 12px 28px -4px rgba(26, 47, 251, 0.14), 0 2px 6px -1px rgba(26, 47, 251, 0.06);
+  box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.10), 0 2px 6px -1px rgba(0, 0, 0, 0.05);
   transform: translateY(-2px);
 }
 
@@ -533,15 +574,14 @@ section {
 }
 
 .gap-card:hover {
-  border-color: rgba(43, 46, 58, 0.4);
   transform: translateY(-2px);
-  box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.08);
 }
 
 .gap-card.selected {
-  border-color: var(--color-electric-indigo);
+  border-color: rgba(43, 46, 58, 0.55);
   background: #ffffff;
-  box-shadow: 0 12px 28px -4px rgba(26, 47, 251, 0.14), 0 2px 6px -1px rgba(26, 47, 251, 0.06);
+  box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.10), 0 2px 6px -1px rgba(0, 0, 0, 0.05);
   transform: translateY(-2px);
 }
 
@@ -610,6 +650,309 @@ section {
   color: transparent;
 }
 
+/* ==========================================================================
+   AI CHAT ASSISTANT — ESSENTIAL ANIMATIONS & POLISH (EMIL KOWALSKI CRAFT)
+   ========================================================================== */
 
+/* Message entrance animation — transform & opacity GPU accelerated */
+.chat-msg-enter {
+  animation: chatMsgEnter 0.22s var(--ease-out) forwards;
+  will-change: transform, opacity;
+}
 
+@keyframes chatMsgEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
 
+/* Suggestion & follow-up prompts — hover lift + active press */
+.chat-suggestion-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--color-paper-white);
+  border: 1px solid var(--color-haze);
+  border-radius: var(--radius-buttons);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-graphite);
+  cursor: pointer;
+  transition: transform 0.16s var(--ease-out), border-color 0.16s var(--ease-out), box-shadow 0.16s var(--ease-out), color 0.16s var(--ease-out);
+  box-shadow: var(--shadow-subtle);
+  user-select: none;
+}
+
+.chat-suggestion-chip:hover {
+  transform: translateY(-2px);
+  color: var(--color-electric-indigo);
+  box-shadow: 0 4px 12px -2px rgba(26, 47, 251, 0.12);
+}
+
+.chat-suggestion-chip:active {
+  transform: scale(0.96);
+}
+
+/* Starter category prompt cards */
+.starter-prompt-card {
+  background: var(--color-paper-white);
+  border: 1px solid var(--color-haze);
+  border-radius: 16px;
+  padding: 16px;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.2s var(--ease-out), border-color 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out);
+  box-shadow: var(--shadow-subtle);
+  position: relative;
+  overflow: hidden;
+}
+
+.starter-prompt-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-float);
+}
+
+.starter-prompt-card:active {
+  transform: scale(0.98);
+}
+
+/* Audio wave equalizer bars for Read Aloud feature */
+.audio-wave-bars {
+  display: inline-flex;
+  align-items: center;
+  gap: 2.5px;
+  height: 14px;
+  padding: 0 2px;
+}
+
+.audio-wave-bars span {
+  width: 2.5px;
+  border-radius: 2px;
+  background: var(--color-electric-indigo);
+  display: inline-block;
+  animation: audioWave 0.9s ease-in-out infinite alternate;
+}
+
+.audio-wave-bars span:nth-child(1) { height: 6px; animation-delay: 0.1s; }
+.audio-wave-bars span:nth-child(2) { height: 14px; animation-delay: 0.35s; }
+.audio-wave-bars span:nth-child(3) { height: 9px; animation-delay: 0.2s; }
+.audio-wave-bars span:nth-child(4) { height: 12px; animation-delay: 0.45s; }
+
+@keyframes audioWave {
+  0% { height: 4px; }
+  100% { height: 14px; }
+}
+
+/* Micro-interaction action buttons */
+.chat-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-graphite);
+  cursor: pointer;
+  transition: background 0.15s var(--ease-out), color 0.15s var(--ease-out), transform 0.12s var(--ease-out), border-color 0.15s var(--ease-out);
+}
+
+.chat-action-btn:hover {
+  background: rgba(26, 47, 251, 0.07);
+  color: var(--color-electric-indigo);
+}
+
+.chat-action-btn:active {
+  transform: scale(0.95);
+}
+
+.chat-action-btn.active {
+  background: rgba(26, 47, 251, 0.1);
+  color: var(--color-electric-indigo);
+  border-color: rgba(26, 47, 251, 0.25);
+}
+
+/* Modal and Drawer Animations */
+.modal-sheet-enter {
+  animation: modalSheetIn 0.22s var(--ease-out) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes modalSheetIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(14, 16, 23, 0.4);
+  backdrop-filter: blur(6px);
+  animation: drawerFadeIn 0.2s var(--ease-out) forwards;
+}
+
+.drawer-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: 380px;
+  background: var(--color-paper-white);
+  border-left: 1px solid var(--color-haze);
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.08);
+  z-index: 95;
+  display: flex;
+  flex-direction: column;
+  animation: drawerSlideIn 0.24s var(--ease-out) forwards;
+  will-change: transform;
+}
+
+@keyframes drawerFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes drawerSlideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+/* Input Focus Ring */
+.chat-input-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--color-paper-white);
+  border: 1px solid var(--color-haze);
+  border-radius: var(--radius-inputs);
+  padding: 6px 8px 6px 16px;
+  transition: border-color 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out);
+  box-shadow: var(--shadow-subtle);
+}
+
+.chat-input-container:focus-within {
+  border-color: var(--color-electric-indigo);
+  box-shadow: var(--shadow-glow-indigo);
+}
+
+/* Mode Switcher Pill Group */
+.chat-mode-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius-buttons);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-graphite);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.16s var(--ease-out), color 0.16s var(--ease-out), transform 0.12s var(--ease-out);
+  user-select: none;
+}
+
+.chat-mode-pill:hover {
+  background: rgba(43, 46, 58, 0.06);
+}
+
+.chat-mode-pill:active {
+  transform: scale(0.97);
+}
+
+.chat-mode-pill.active {
+  background: var(--color-graphite);
+  color: var(--color-paper-white);
+  box-shadow: var(--shadow-subtle);
+}
+
+/* Reduced Motion Safety */
+@media (prefers-reduced-motion: reduce) {
+  .chat-msg-enter,
+  .modal-sheet-enter,
+  .drawer-panel,
+  .drawer-backdrop {
+    animation: none !important;
+    transition: none !important;
+  }
+  .chat-suggestion-chip:hover,
+  .starter-prompt-card:hover {
+    transform: none !important;
+  }
+  .audio-wave-bars span {
+    animation: none !important;
+    height: 8px !important;
+  }
+}
+
+/* ==========================================================================
+   SEAMLESS PAGE TRANSITION (View Transitions API)
+   Old + new pages overlap momentarily on every internal navigation:
+   outgoing fades and lifts away while the incoming page rises into place.
+   Scoped via html.vt-page so pages never flash unstyled mid-flight.
+   ========================================================================== */
+
+html.vt-page::view-transition {
+  background: var(--color-lavender-mist);
+}
+
+html.vt-page::view-transition-old(root),
+html.vt-page::view-transition-new(root) {
+  animation-duration: 480ms;
+  animation-timing-function: var(--ease-out);
+  animation-fill-mode: both;
+  mix-blend-mode: normal;
+}
+
+html.vt-page::view-transition-old(root) {
+  animation-name: vt-page-out;
+}
+
+html.vt-page::view-transition-new(root) {
+  animation-name: vt-page-in;
+}
+
+@keyframes vt-page-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-28px) scale(0.985);
+  }
+}
+
+@keyframes vt-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(44px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.vt-page::view-transition-old(root),
+html.vt-page::view-transition-new(root) {
+    animation: none !important;
+  }
+}

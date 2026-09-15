@@ -2,30 +2,23 @@
 // Pure Lusion light aesthetic: Lavender Mist canvas, paper-white cards, Electric Indigo accent
 
 import React, { useState } from 'react';
-import { ANNUAL_TRENDS, LEADING_ORGANISATIONS, PLATFORM_STATS } from '../data/mineralsData';
+import { ANNUAL_TRENDS, LEADING_ORGANISATIONS } from '../data/mineralsData';
 import { useScrollReveal } from '../components/common/useScrollReveal';
+import SplitText from '../components/bits/SplitText';
+import CountUp from '../components/bits/CountUp';
+import SpotlightCard from '../components/bits/SpotlightCard';
 import {
   TrendingUp,
   BarChart3,
-  Users,
-  PieChart,
-  Zap,
   ArrowUpRight,
   ShieldCheck,
-  Building2,
-  Calendar,
-  Layers,
-  ChevronRight,
   Info,
   Sparkles,
-  Gauge,
-  Compass,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function PatentTrendsPage() {
   const [activeYearIndex, setActiveYearIndex] = useState(ANNUAL_TRENDS.length - 1);
-  const [selectedVelocityDomain, setSelectedVelocityDomain] = useState('all');
 
   useScrollReveal();
 
@@ -65,7 +58,16 @@ export default function PatentTrendsPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '20px' }}>
             <div>
               <h1 style={{ fontSize: '42px', fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.15, color: 'var(--color-ink)' }}>
-                Patent Trends &amp; Velocity
+                <SplitText
+                  text="Patent Trends & Velocity"
+                  tag="span"
+                  splitType="words"
+                  textAlign="left"
+                  delay={55}
+                  duration={0.9}
+                  from={{ opacity: 0, y: 32 }}
+                  to={{ opacity: 1, y: 0 }}
+                />
               </h1>
               <p style={{ color: 'var(--color-graphite)', fontSize: '15px', marginTop: '8px', maxWidth: '680px' }}>
                 Multi-year filing trajectories, TRL acceleration dynamics, and institutional leadership data capturing India's rapid rise in critical minerals intellectual property.
@@ -95,20 +97,20 @@ export default function PatentTrendsPage() {
           }}
           className="reveal-init"
         >
-          <div className="card card-interactive" style={{ padding: '20px 24px' }}>
+          <SpotlightCard className="card card-interactive" spotlightColor="rgba(26, 47, 251, 0.09)" style={{ padding: '20px 24px' }}>
             <div style={{ fontSize: '12px', color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '-0.02em' }}>
               10-Year Filing CAGR
             </div>
             <div style={{ fontSize: '32px', fontWeight: 500, color: 'var(--color-electric-indigo)', marginTop: '4px' }}>
-              +27.3%
+              +<CountUp to={27.3} duration={1.6} />%
             </div>
             <div style={{ fontSize: '12px', color: '#059669', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <TrendingUp style={{ width: '12px', height: '12px' }} />
               Surge from 112 (2016) to 1,250 (2026)
             </div>
-          </div>
+          </SpotlightCard>
 
-          <div className="card card-interactive" style={{ padding: '20px 24px' }}>
+          <SpotlightCard className="card card-interactive" spotlightColor="rgba(26, 47, 251, 0.09)" style={{ padding: '20px 24px' }}>
             <div style={{ fontSize: '12px', color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '-0.02em' }}>
               Peak Velocity Mineral
             </div>
@@ -118,31 +120,31 @@ export default function PatentTrendsPage() {
             <div style={{ fontSize: '12px', color: 'var(--color-graphite)', marginTop: '4px' }}>
               44% of total national filings in 2026
             </div>
-          </div>
+          </SpotlightCard>
 
-          <div className="card card-interactive" style={{ padding: '20px 24px' }}>
+          <SpotlightCard className="card card-interactive" spotlightColor="rgba(26, 47, 251, 0.09)" style={{ padding: '20px 24px' }}>
             <div style={{ fontSize: '12px', color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '-0.02em' }}>
               Domestic Sovereign IP
             </div>
             <div style={{ fontSize: '32px', fontWeight: 500, color: 'var(--color-ink)', marginTop: '4px' }}>
-              84.0%
+              <CountUp to={84} duration={1.6} />.0%
             </div>
             <div style={{ fontSize: '12px', color: '#059669', marginTop: '4px' }}>
               Indigenous CSIR, IIT &amp; Industry ratio
             </div>
-          </div>
+          </SpotlightCard>
 
-          <div className="card card-interactive" style={{ padding: '20px 24px' }}>
+          <SpotlightCard className="card card-interactive" spotlightColor="rgba(26, 47, 251, 0.09)" style={{ padding: '20px 24px' }}>
             <div style={{ fontSize: '12px', color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '-0.02em' }}>
               Active Scientific Papers
             </div>
             <div style={{ fontSize: '32px', fontWeight: 500, color: 'var(--color-electric-indigo)', marginTop: '4px' }}>
-              4,950+
+              <CountUp to={4950} separator="," duration={1.8} />+
             </div>
             <div style={{ fontSize: '12px', color: 'var(--color-graphite)', marginTop: '4px' }}>
               OpenAlex peer-reviewed publications
             </div>
-          </div>
+          </SpotlightCard>
         </div>
 
         {/* Main Annual Trajectory Interactive Bar Chart */}

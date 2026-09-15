@@ -17,12 +17,9 @@ const footerLinks = [
   {
     title: "Product",
     links: [
-      { name: "Features", href: "#" },
-      { name: "Solution", href: "#" },
-      { name: "Customers", href: "#" },
-      { name: "Pricing", href: "#" },
-      { name: "Help", href: "#" },
-      { name: "Terms", href: "#" },
+      { name: "Features", href: "/#features" },
+      { name: "Help", href: "/help" },
+      { name: "Terms", href: "/terms" },
     ],
   },
   {
@@ -31,7 +28,6 @@ const footerLinks = [
       { name: "About", href: "#" },
       { name: "Careers", href: "#" },
       { name: "Blogs", href: "#" },
-      { name: "Pricing", href: "#" },
       { name: "Contact", href: "#" },
       { name: "Privacy", href: "#" },
     ],

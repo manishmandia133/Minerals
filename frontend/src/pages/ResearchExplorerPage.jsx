@@ -3,7 +3,6 @@
 
 import React, { useState } from 'react';
 import { RESEARCH_PUBLICATIONS } from '../data/researchData';
-import { CRITICAL_MINERALS } from '../data/mineralsData';
 import { useScrollReveal } from '../components/common/useScrollReveal';
 import {
   BookOpen,
@@ -11,22 +10,15 @@ import {
   ExternalLink,
   Download,
   Bookmark,
-  Share2,
-  CheckCircle2,
   Sparkles,
   Building2,
-  Calendar,
-  Layers,
-  Award,
   ArrowUpRight,
   X,
-  FileText,
-  TrendingUp,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function ResearchExplorerPage() {
-  const [publications, setPublications] = useState(RESEARCH_PUBLICATIONS);
+  const [publications] = useState(RESEARCH_PUBLICATIONS);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMineral, setSelectedMineral] = useState('all');
   const [selectedInstType, setSelectedInstType] = useState('all');
@@ -353,13 +345,14 @@ export default function ResearchExplorerPage() {
                   setSelectedPaper(paper);
 
                 }}
-                className={`card card-interactive reveal-init stagger-${(idx % 4) + 1}`}
+                className="card card-interactive grid-enter"
                 style={{
                   cursor: 'pointer',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
                   border: '1px solid var(--color-haze)',
+                  animationDelay: `${Math.min(idx, 7) * 45}ms`,
                 }}
               >
                 <div>
@@ -518,204 +511,274 @@ export default function ResearchExplorerPage() {
         )}
       </div>
 
-      {/* Publication Details Modal */}
+      {/* Publication Details Drawer */}
       {selectedPaper && (
-        <div className="modal-backdrop" onClick={() => setSelectedPaper(null)}>
-          <div className="modal-sheet" onClick={(e) => e.stopPropagation()} style={{ padding: '36px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', marginBottom: '20px' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
-                  <span className="badge badge-indigo">{selectedPaper.mineral}</span>
-                  <span className="badge badge-emerald">{selectedPaper.citations} Citations</span>
-                  <span className="badge">TRL {selectedPaper.trl} / 9</span>
-                  <span className="badge">{selectedPaper.year}</span>
-                </div>
-                <h2 style={{ fontSize: '22px', fontWeight: 500, lineHeight: 1.3, color: 'var(--color-ink)' }}>
-                  {selectedPaper.title}
-                </h2>
-              </div>
+        <PaperDrawer
+          paper={selectedPaper}
+          onClose={() => setSelectedPaper(null)}
+          onCopy={() => handleCopyCitation(selectedPaper)}
+          copied={copiedId === selectedPaper.id}
+        />
+      )}
+      <style>{`
+        .res-drawer { scrollbar-width: none; -ms-overflow-style: none; }
+        .res-drawer::-webkit-scrollbar { display: none; }
+        @media (prefers-reduced-motion: reduce) { .res-drawer { transition: none !important; } }
+      `}</style>
+    </div>
+  );
+}
+
+function PaperDrawer({ paper, onClose, onCopy, copied }) {
+  const [open, setOpen] = React.useState(false);
+  const closeTimer = React.useRef(null);
+
+  const handleClose = React.useCallback(() => {
+    setOpen(false);
+    clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(onClose, 340);
+  }, [onClose]);
+
+  React.useEffect(() => {
+    const raf = requestAnimationFrame(() => requestAnimationFrame(() => setOpen(true)));
+    const h = (e) => { if (e.key === 'Escape') handleClose(); };
+    window.addEventListener('keydown', h);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(closeTimer.current);
+      window.removeEventListener('keydown', h);
+      document.body.style.overflow = '';
+    };
+  }, [handleClose]);
+
+  return (
+    <div
+      onClick={handleClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 100,
+        background: 'rgba(16,24,40,.5)',
+        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label={paper.title}
+        className="res-drawer"
+        style={{
+          background: 'var(--color-paper-white)',
+          borderRadius: '24px 24px 0 0',
+          width: 'min(960px, 100%)',
+          maxHeight: '88vh',
+          overflowY: 'auto',
+          border: '1px solid var(--color-haze)',
+          borderBottom: 'none',
+          boxShadow: '0 -24px 64px -12px rgba(16, 24, 40, 0.35)',
+          transform: open ? 'translateY(0)' : 'translateY(100%)',
+          transition: open
+            ? 'transform 0.55s cubic-bezier(0.32, 0.72, 0, 1)'
+            : 'transform 0.32s cubic-bezier(0.5, 0, 0.75, 0)',
+          willChange: 'transform',
+        }}
+      >
+        <div aria-hidden="true" style={{ padding: '12px 0 4px', display: 'flex', justifyContent: 'center', position: 'sticky', top: 0, background: 'var(--color-paper-white)', zIndex: 2 }}>
+          <span style={{ width: '44px', height: '5px', borderRadius: '999px', background: 'var(--color-haze)' }} />
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', padding: '10px 36px 20px', borderBottom: '1px solid var(--color-haze)', position: 'sticky', top: '21px', background: 'var(--color-paper-white)', zIndex: 2 }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
+              <span className="badge badge-indigo">{paper.mineral}</span>
+              <span className="badge badge-emerald">{paper.citations} Citations</span>
+              <span className="badge">TRL {paper.trl} / 9</span>
+              <span className="badge">{paper.year}</span>
+            </div>
+            <h2 style={{ fontSize: '22px', fontWeight: 500, lineHeight: 1.3, color: 'var(--color-ink)' }}>
+              {paper.title}
+            </h2>
+          </div>
+
+          <button
+            onClick={handleClose}
+            aria-label="Close"
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              background: 'var(--color-lavender-mist)',
+              border: '1px solid var(--color-haze)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: 'var(--color-ink)',
+              flexShrink: 0,
+            }}
+          >
+            <X style={{ width: '16px', height: '16px' }} />
+          </button>
+        </div>
+
+        <div style={{ padding: '24px 36px 36px' }}>
+          {/* Core Metadata Table */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+              gap: '14px',
+              padding: '16px',
+              borderRadius: '14px',
+              background: 'var(--color-lavender-mist)',
+              border: '1px solid var(--color-haze)',
+              marginBottom: '24px',
+              fontSize: '12px',
+            }}
+          >
+            <div>
+              <span style={{ color: 'var(--color-graphite)', display: 'block', fontSize: '11px', textTransform: 'uppercase' }}>
+                Journal
+              </span>
+              <span style={{ fontWeight: 500, color: 'var(--color-ink)', marginTop: '2px', display: 'block' }}>
+                {paper.journal}
+              </span>
+            </div>
+
+            <div>
+              <span style={{ color: 'var(--color-graphite)', display: 'block', fontSize: '11px', textTransform: 'uppercase' }}>
+                Affiliated Institution
+              </span>
+              <span style={{ fontWeight: 500, color: 'var(--color-ink)', marginTop: '2px', display: 'block' }}>
+                {paper.institution}
+              </span>
+            </div>
+
+            <div>
+              <span style={{ color: 'var(--color-graphite)', display: 'block', fontSize: '11px', textTransform: 'uppercase' }}>
+                Domain Category
+              </span>
+              <span style={{ fontWeight: 500, color: 'var(--color-ink)', marginTop: '2px', display: 'block' }}>
+                {paper.domain}
+              </span>
+            </div>
+
+            <div>
+              <span style={{ color: 'var(--color-graphite)', display: 'block', fontSize: '11px', textTransform: 'uppercase' }}>
+                Digital Object ID (DOI)
+              </span>
+              <span style={{ fontWeight: 500, color: 'var(--color-electric-indigo)', marginTop: '2px', display: 'block' }}>
+                {paper.doi}
+              </span>
+            </div>
+          </div>
+
+          {/* Authors */}
+          <div style={{ marginBottom: '20px' }}>
+            <div style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--color-graphite)', marginBottom: '8px', fontWeight: 500 }}>
+              Contributing Authors
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {paper.authors.map((author) => (
+                <span
+                  key={author}
+                  style={{
+                    padding: '4px 12px',
+                    borderRadius: '20px',
+                    background: 'var(--color-paper-white)',
+                    border: '1px solid var(--color-haze)',
+                    fontSize: '12px',
+                    color: 'var(--color-ink)',
+                  }}
+                >
+                  {author}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Full Abstract */}
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--color-graphite)', marginBottom: '8px', fontWeight: 500 }}>
+              Scientific Abstract
+            </div>
+            <div
+              style={{
+                padding: '18px',
+                borderRadius: '14px',
+                background: 'var(--color-paper-white)',
+                border: '1px solid var(--color-haze)',
+                fontSize: '13px',
+                lineHeight: 1.65,
+                color: 'var(--color-ink)',
+              }}
+            >
+              {paper.abstract}
+            </div>
+          </div>
+
+          {/* Keywords */}
+          <div style={{ marginBottom: '28px' }}>
+            <div style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--color-graphite)', marginBottom: '8px', fontWeight: 500 }}>
+              Index Keywords
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {paper.keywords.map((kw) => (
+                <span
+                  key={kw}
+                  className="badge"
+                  style={{ fontSize: '12px', padding: '4px 10px' }}
+                >
+                  {kw}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Drawer Bottom Actions */}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '12px',
+              paddingTop: '16px',
+              borderTop: '1px solid var(--color-haze)',
+            }}
+          >
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <a
+                href={paper.openAccessUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-pill btn-pill-indigo"
+                style={{ fontSize: '12px', padding: '12px 20px' }}
+              >
+                <ExternalLink style={{ width: '13px', height: '13px' }} />
+                <span>Open DOI Publisher Article</span>
+              </a>
 
               <button
-                onClick={() => {
-                  setSelectedPaper(null);
-
-                }}
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '50%',
-                  background: 'var(--color-lavender-mist)',
-                  border: '1px solid var(--color-haze)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  color: 'var(--color-ink)',
-                  flexShrink: 0,
-                }}
+                onClick={onCopy}
+                className="btn-pill btn-pill-outline"
+                style={{ fontSize: '12px', padding: '12px 20px' }}
               >
-                <X style={{ width: '16px', height: '16px' }} />
+                {copied ? 'Copied!' : 'Copy Citation'}
               </button>
             </div>
 
-            {/* Core Metadata Table */}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-                gap: '14px',
-                padding: '16px',
-                borderRadius: '14px',
-                background: 'var(--color-lavender-mist)',
-                border: '1px solid var(--color-haze)',
-                marginBottom: '24px',
-                fontSize: '12px',
-              }}
+            <Link
+              to={`/chat?query=${encodeURIComponent(`Explain research paper: "${paper.title}" by ${paper.institution}`)}`}
+              className="btn-pill"
+              style={{ fontSize: '12px', padding: '12px 20px' }}
             >
-              <div>
-                <span style={{ color: 'var(--color-graphite)', display: 'block', fontSize: '11px', textTransform: 'uppercase' }}>
-                  Journal
-                </span>
-                <span style={{ fontWeight: 500, color: 'var(--color-ink)', marginTop: '2px', display: 'block' }}>
-                  {selectedPaper.journal}
-                </span>
-              </div>
-
-              <div>
-                <span style={{ color: 'var(--color-graphite)', display: 'block', fontSize: '11px', textTransform: 'uppercase' }}>
-                  Affiliated Institution
-                </span>
-                <span style={{ fontWeight: 500, color: 'var(--color-ink)', marginTop: '2px', display: 'block' }}>
-                  {selectedPaper.institution}
-                </span>
-              </div>
-
-              <div>
-                <span style={{ color: 'var(--color-graphite)', display: 'block', fontSize: '11px', textTransform: 'uppercase' }}>
-                  Domain Category
-                </span>
-                <span style={{ fontWeight: 500, color: 'var(--color-ink)', marginTop: '2px', display: 'block' }}>
-                  {selectedPaper.domain}
-                </span>
-              </div>
-
-              <div>
-                <span style={{ color: 'var(--color-graphite)', display: 'block', fontSize: '11px', textTransform: 'uppercase' }}>
-                  Digital Object ID (DOI)
-                </span>
-                <span style={{ fontWeight: 500, color: 'var(--color-electric-indigo)', marginTop: '2px', display: 'block' }}>
-                  {selectedPaper.doi}
-                </span>
-              </div>
-            </div>
-
-            {/* Authors */}
-            <div style={{ marginBottom: '20px' }}>
-              <div style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--color-graphite)', marginBottom: '8px', fontWeight: 500 }}>
-                Contributing Authors
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                {selectedPaper.authors.map((author) => (
-                  <span
-                    key={author}
-                    style={{
-                      padding: '4px 12px',
-                      borderRadius: '20px',
-                      background: 'var(--color-paper-white)',
-                      border: '1px solid var(--color-haze)',
-                      fontSize: '12px',
-                      color: 'var(--color-ink)',
-                    }}
-                  >
-                    {author}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Full Abstract */}
-            <div style={{ marginBottom: '24px' }}>
-              <div style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--color-graphite)', marginBottom: '8px', fontWeight: 500 }}>
-                Scientific Abstract
-              </div>
-              <div
-                style={{
-                  padding: '18px',
-                  borderRadius: '14px',
-                  background: 'var(--color-paper-white)',
-                  border: '1px solid var(--color-haze)',
-                  fontSize: '13px',
-                  lineHeight: 1.65,
-                  color: 'var(--color-ink)',
-                }}
-              >
-                {selectedPaper.abstract}
-              </div>
-            </div>
-
-            {/* Keywords */}
-            <div style={{ marginBottom: '28px' }}>
-              <div style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--color-graphite)', marginBottom: '8px', fontWeight: 500 }}>
-                Index Keywords
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {selectedPaper.keywords.map((kw) => (
-                  <span
-                    key={kw}
-                    className="badge"
-                    style={{ fontSize: '12px', padding: '4px 10px' }}
-                  >
-                    {kw}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Modal Bottom Actions */}
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: '12px',
-                paddingTop: '16px',
-                borderTop: '1px solid var(--color-haze)',
-              }}
-            >
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <a
-                  href={selectedPaper.openAccessUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-pill btn-pill-indigo"
-                  style={{ fontSize: '12px', padding: '12px 20px' }}
-                >
-                  <ExternalLink style={{ width: '13px', height: '13px' }} />
-                  <span>Open DOI Publisher Article</span>
-                </a>
-
-                <button
-                  onClick={() => handleCopyCitation(selectedPaper)}
-                  className="btn-pill btn-pill-outline"
-                  style={{ fontSize: '12px', padding: '12px 20px' }}
-                >
-                  {copiedId === selectedPaper.id ? 'Copied!' : 'Copy Citation'}
-                </button>
-              </div>
-
-              <Link
-                to={`/chat?query=${encodeURIComponent(`Explain research paper: "${selectedPaper.title}" by ${selectedPaper.institution}`)}`}
-                className="btn-pill"
-                style={{ fontSize: '12px', padding: '12px 20px' }}
-              >
-                <Sparkles style={{ width: '13px', height: '13px' }} />
-                <span>Discuss Paper with AI</span>
-              </Link>
-            </div>
+              <Sparkles style={{ width: '13px', height: '13px' }} />
+              <span>Discuss Paper with AI</span>
+            </Link>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

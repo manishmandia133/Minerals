@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import ScrollReveal from '../common/ScrollReveal';
 import { TECHNOLOGY_GAPS } from '../../data/mineralsData';
-import { ShieldAlert, Sparkles, CheckCircle2, ArrowRight, Activity, TrendingUp, AlertTriangle } from 'lucide-react';
+import { ShieldAlert, Sparkles, CheckCircle2 } from 'lucide-react';
 export default function TechnologyGapsSection() {
   const [selectedGap, setSelectedGap] = useState(TECHNOLOGY_GAPS[0]);
 

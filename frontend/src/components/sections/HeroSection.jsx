@@ -3,6 +3,8 @@
 
 import React from 'react';
 import ScrollReveal from '../common/ScrollReveal';
+import FoldText from '../common/FoldText';
+import CountUp from '../bits/CountUp';
 import { CRITICAL_MINERALS, PLATFORM_STATS } from '../../data/mineralsData';
 
 const s = {
@@ -63,7 +65,7 @@ const s = {
   },
 };
 
-export default function HeroSection({ activeMineral, setActiveMineral, onNavigate }) {
+export default function HeroSection({ activeMineral, setActiveMineral }) {
   const currentMineral = CRITICAL_MINERALS.find((m) => m.id === activeMineral) || CRITICAL_MINERALS[0];
 
   return (
@@ -76,7 +78,21 @@ export default function HeroSection({ activeMineral, setActiveMineral, onNavigat
 
         {/* Headline */}
         <h1 style={s.headline}>
-          Smart Technology &<br />Patent Tracker
+          <FoldText
+            text={'Smart Technology &\nPatent Tracker'}
+            splitBy="word"
+            hinge="top"
+            trigger="mount"
+            duration={0.7}
+            stagger={0.08}
+            ease="power3.out"
+            perspective={700}
+            creaseShading={0.4}
+            fontSize="clamp(38px, 5vw, 72px)"
+            fontWeight={500}
+            color="var(--color-ink)"
+            style={{ lineHeight: 1.05, letterSpacing: '-0.02em' }}
+          />
         </h1>
         <ScrollReveal
           baseOpacity={0.15}
@@ -190,10 +206,10 @@ export default function HeroSection({ activeMineral, setActiveMineral, onNavigat
           marginTop: '16px',
         }}>
           {[
-            { label: 'Patents Tracked', value: `${PLATFORM_STATS.totalPatentsTracked.toLocaleString()}+` },
-            { label: 'Research Works', value: `${PLATFORM_STATS.totalResearchArticles.toLocaleString()}+` },
-            { label: 'Critical Minerals', value: PLATFORM_STATS.notifiedMinerals },
-            { label: 'R&D Institutions', value: PLATFORM_STATS.activeRndInstitutions },
+            { label: 'Patents Tracked', value: <><CountUp to={PLATFORM_STATS.totalPatentsTracked} separator="," duration={1.8} />+</> },
+            { label: 'Research Works', value: <><CountUp to={PLATFORM_STATS.totalResearchArticles} separator="," duration={1.8} />+</> },
+            { label: 'Critical Minerals', value: <CountUp to={PLATFORM_STATS.notifiedMinerals} duration={1.4} /> },
+            { label: 'R&D Institutions', value: <CountUp to={PLATFORM_STATS.activeRndInstitutions} duration={1.4} /> },
           ].map((stat) => (
             <div key={stat.label} style={{
               background: 'var(--color-paper-white)',
