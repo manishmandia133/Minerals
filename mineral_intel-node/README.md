@@ -72,14 +72,14 @@ Any source failure degrades to a `[pending]` stub (`{ title: "[pending] <query>"
 
 | Fetcher | Key | Volume | Notes |
 |---|---|---|---|
-| `patents(query, pages=2, {since, until, latest})` | none | ~200/query | Google Patents XHR, `country=IN`. No abstract — enrichment scrapes it later. A failed page keeps earlier pages; stub only if nothing arrived. `latest` adds `sort=new` + sorts newest-first; `since/until` filter client-side. |
+| `patents(query, pages=2, {since, until, latest})` | none | ~200/query | Google Patents XHR, `country=IN`, `num=100`/page. No abstract — the search `snippet` is stored separately and seeds a provisional abstract until enrichment upgrades it from the real page. A failed page keeps earlier pages; stub only if nothing arrived. `latest` adds `sort=new` + sorts newest-first; `since/until` filter client-side. |
 | `openalex(query, {perPage=100, indiaOnly, mailto, since, until, latest})` | none | 100/query | `filter=institutions.country_code:IN` when `indiaOnly`. Abstract is `null` here — rebuilt per-DOI during enrichment. `since/until` go server-side (`from/to_publication_date`) plus a client-side check. |
 
 ### 2. Clean + store — `services/store.service.js`
 
 One file per record in `data/records/` (`RECORDS_DIR` overrides), named `<slug>-<id>.json` (slug ≤60 chars, id = 6 random bytes). Names self-heal on every save + server startup.
 
-Dedupe key: `pub:<number>` → `doi:<doi>` → first 80 alnum chars of title. Titles <3 chars and `[pending]` stubs are skipped.
+Dedupe key: `pub:<number>` → `doi:<doi>` → first 80 alnum chars of title. Titles <3 chars and `[pending]` stubs are skipped. Re-seeing a record **upserts**: empty slots fill and a longer `abstract` replaces a shorter one (`merged` count); unchanged re-posts count as `duplicates`.
 
 ### 3. Enrich — `services/enrich.service.js` + `scrape.service.js`
 
@@ -90,13 +90,15 @@ flowchart TD
     OA --> OK1{"abstract found?"}
     OK1 -- yes --> SAVE(["patch + done"])
     OK1 -- no --> SCR
-    DOI -- no --> SCR["scrapePage(source_url)\nGoogle Patents page only"]
-    SCR --> OK2{"abstract > 40 chars?"}
+    DOI -- no --> ID{"source is an\nOpenAlex work URL?"}
+    ID -- yes --> OA
+    ID -- no --> SCR["scrapePage(source_url)\nGoogle Patents page only"]
+    SCR --> OK2{"abstract longer than\ncurrent?"}
     OK2 -- yes --> SAVE
     OK2 -- no --> MISS(["stays thin → pruned"])
 ```
 
-`updateRecord()` only fills **empty** slots — good data is never overwritten. `enrichIds(ids, limit=50)` reloads each record fresh from disk with a 300 ms sleep between items. The scraper (`fetch` + regex, zero deps) returns only what enrichment consumes.
+`updateRecord()` fills **empty** slots and upgrades `abstract` when a longer one arrives — good data is never overwritten by worse data. `enrichIds(ids, limit=50)` reloads each record fresh from disk with a 300 ms sleep between items. The scraper (`fetch` + regex, zero deps) returns only what enrichment consumes; `organisation` comes from author-affiliation evidence only, never the publisher.
 
 ### 4. Prune — the garbage collector
 
@@ -138,7 +140,7 @@ Default queries cover lithium, cobalt, nickel, rare earths, graphite, manganese,
   "records": [{ "title": "My patent", "publication_number": "IN202400001" }] }
 ```
 
-Empty → `400`. Success → `200 { ok, received, inserted, duplicates, renamed, enriched }`.
+Empty → `400`. Success → `200 { ok, received, inserted, duplicates, merged, renamed, enriched }`.
 
 | Endpoint | Result |
 |---|---|

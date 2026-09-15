@@ -11,19 +11,19 @@ const { QUERIES, INTERVAL_MIN, FETCH_SLEEP_MS, getDateOpts } = require('../confi
 
 // Fetch all queries -> files (Google patents + OpenAlex research).
 async function fetchCycle() {
-  let received = 0, inserted = 0, duplicates = 0;
+  let received = 0, inserted = 0, duplicates = 0, merged = 0;
   const d = getDateOpts();
   for (const q of QUERIES) {
     try {
       const recs = [...await patents(q, 2, d), ...await openalex(q, { perPage: 100, indiaOnly: true, ...d })];
       const s = store.saveRecords(recs);
-      received += s.received; inserted += s.inserted; duplicates += s.duplicates;
+      received += s.received; inserted += s.inserted; duplicates += s.duplicates; merged += s.merged || 0;
     } catch (e) {
       console.log(`[auto ${stamp()}] fetch "${q}" failed: ${e.message}`);
     }
     await sleep(FETCH_SLEEP_MS); // be polite to free APIs
   }
-  console.log(`[auto ${stamp()}] fetch: queries=${QUERIES.length} received=${received} inserted=${inserted} duplicates=${duplicates}`);
+  console.log(`[auto ${stamp()}] fetch: queries=${QUERIES.length} received=${received} inserted=${inserted} duplicates=${duplicates} merged=${merged}`);
 }
 
 // Fill missing abstracts (capped per cycle).
@@ -52,7 +52,14 @@ const args = process.argv.slice(2);
     return;
   }
   if (args.includes('--once')) { await cycle(); return; }
-  const mins = parseInt(args[args.indexOf('--interval') + 1] || INTERVAL_MIN, 10);
+  const intervalIndex = args.indexOf('--interval');
+  let mins = INTERVAL_MIN;
+  if (intervalIndex !== -1) {
+    mins = Number(args[intervalIndex + 1]);
+    if (!Number.isFinite(mins) || mins <= 0) {
+      throw new Error('--interval must be a positive number of minutes');
+    }
+  }
   await cycle();
   console.log(`[auto] next cycle in ${mins} min`);
   setInterval(async () => {

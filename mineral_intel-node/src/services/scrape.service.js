@@ -65,6 +65,14 @@ async function scrapePage(url) {
     typeof a === 'string' ? a : a.name).filter(Boolean);
   const authors = [...new Set([...citeAuthors, ...ldAuthors])].slice(0, 20);
 
+  // Organisation = author affiliation evidence only. A publisher (Elsevier,
+  // Google Patents, ...) is NOT the research organisation — when no affiliation
+  // is found, leave it null rather than misattributing.
+  const citeInstitutions = allMatches(html, /<meta[^>]*citation_author_institution[^>]*content=["']([\s\S]*?)["']/gi);
+  const ldAffiliations = [flatLd.author].flat().filter(Boolean).map((a) =>
+    (a && typeof a === 'object' && (a.affiliation?.name || a.affiliation)) || null).filter(Boolean);
+  const organisation = citeInstitutions[0] || ldAffiliations[0] || null;
+
   const published_date =
     meta['citation_publication_date'] || meta['citation_online_date'] ||
     meta['article:published_time'] || flatLd.datePublished || null;
@@ -73,8 +81,6 @@ async function scrapePage(url) {
     meta['citation_journal_title'] || meta['og:site_name'] || null;
   const doi =
     meta['citation_doi'] || meta['dc.identifier'] || flatLd.doi || null;
-  const publisher =
-    meta['citation_publisher'] || meta['og:site_name'] || flatLd.publisher?.name || null;
 
   const paras = allMatches(html, /<p[^>]*>([\s\S]*?)<\/p>/gi, 1, 2000)
     .filter((p) => p.length > 40);
@@ -90,7 +96,7 @@ async function scrapePage(url) {
     source: 'web', kind: 'research', title,
     abstract: abstract ? String(abstract).slice(0, 2000) : null,
     full_text,
-    authors, organisation: publisher,
+    authors, organisation,
     journal, doi,
     published_date,
     source_url: url,

@@ -3,8 +3,9 @@
 //
 // Response shape (verified Sep 2026): results.cluster[] holds ONE cluster whose
 // `result` is an ARRAY of { id: 'patent/<PUBNO>/en', patent: { title, snippet,
-// publication_date, inventor, assignee, publication_number, ... } } — up to 10
-// per page. Older shape (result = single flat object) is still accepted.
+// publication_date, inventor, assignee, publication_number, ... } } — up to
+// `num` per page (requested 100; Google falls back to 10 if it ever ignores it).
+// Older shape (result = single flat object) is still accepted.
 const { getJson, pending } = require('../utils/http');
 const { resolveSince, resolveUntil, resolveLatest, inRange, newestFirst } = require('../utils/dates');
 
@@ -28,7 +29,7 @@ async function patents(query, pages = 2, opts = {}) {
   const out = [];
   for (let p = 0; p < Math.max(1, pages); p++) {
     try {
-      let q = `q=${query}&country=IN&page=${p}&language=ENGLISH`;
+      let q = `q=${query}&country=IN&page=${p}&language=ENGLISH&num=100`;
       if (latest) q += '&sort=new';
       const data = await getJson('https://patents.google.com/xhr/query', { url: q, exp: '' });
       const clusters = ((data.results || {}).cluster || []).slice(0, 100);
@@ -41,7 +42,12 @@ async function patents(query, pages = 2, opts = {}) {
           const parties = [pat.assignee, pat.inventor].map((s) => String(s || '').trim()).filter(Boolean);
           out.push({
             source: 'indian_patent', kind: 'patent', title: plain(pat.title) || '',
+            // Provisional abstract from the snippet: keeps the record useful and
+            // prunable-surviving until enrichment upgrades it from the real page
+            // (updateRecord replaces abstracts when a longer one arrives).
+            // The raw excerpt stays in `snippet` for provenance.
             abstract: snippet.length > 40 ? snippet : null,
+            snippet: snippet || null,
             publication_number,
             publication_date: pat.publication_date ? String(pat.publication_date).slice(0, 10) : null,
             applicants_or_authors: [...new Set(parties)],
