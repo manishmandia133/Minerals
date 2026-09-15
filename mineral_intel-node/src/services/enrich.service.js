@@ -1,15 +1,18 @@
 'use strict';
-// Enrichment: fill records missing an abstract via DOI -> OpenAlex,
-// else scrape source_url with ./webscrape.js. Used by server + auto.js.
-const store = require('./store');
-const { scrapePage } = require('./webscrape');
-
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// Fill missing abstracts: DOI -> OpenAlex, else Google Patents page.
+const store = require('./store.service');
+const { scrapePage } = require('./scrape.service');
+const { sleep } = require('../utils/http');
+const { ENRICH_SLEEP_MS, USER_AGENT } = require('../config');
 
 async function openAlexPatch(doi) {
-  const clean = String(doi).replace(/^https?:\/\/doi\.org\//, '');
-  const d = await (await fetch(`https://api.openalex.org/works/https://doi.org/${clean}`,
-    { headers: { 'User-Agent': 'mineral-intel/1.0' } })).json();
+  const clean = String(doi).replace(/^https?:\/\/(dx\.)?doi\.org\//, '').trim();
+  if (!clean) return null;
+  const mailto = process.env.OPENALEX_MAILTO ? `?mailto=${encodeURIComponent(process.env.OPENALEX_MAILTO)}` : '';
+  const r = await fetch(`https://api.openalex.org/works/https://doi.org/${encodeURIComponent(clean)}${mailto}`,
+    { headers: { 'User-Agent': USER_AGENT } });
+  if (!r.ok) return null;
+  const d = await r.json();
   const inv = d.abstract_inverted_index || {};
   const pos = {};
   for (const [w, list] of Object.entries(inv)) for (const p of list) pos[p] = w;
@@ -29,7 +32,7 @@ async function enrichRecord(rec) {
       const patch = await openAlexPatch(rec.doi);
       if (patch) return store.updateRecord(rec.id, patch);
     }
-    if (rec.source_url && /^https?:\/\//.test(rec.source_url)) {
+    if (rec.source_url && /^https?:\/\/patents\.google\.com\//.test(rec.source_url)) {
       const s = await scrapePage(rec.source_url);
       if (s.abstract && s.abstract.length > 40) {
         return store.updateRecord(rec.id, {
@@ -42,17 +45,17 @@ async function enrichRecord(rec) {
         });
       }
     }
-  } catch { /* blocked page / offline — skip */ }
+  } catch { /* skip */ }
   return false;
 }
 
-// Enrich the given ids (fresh-loaded). Returns number filled.
+// Returns number filled.
 async function enrichIds(ids, limit = 50) {
   let done = 0;
   for (const id of ids.slice(0, limit)) {
     const rec = store.load().find((r) => r.id === id);
     if (rec && await enrichRecord(rec)) done++;
-    await sleep(300);
+    await sleep(ENRICH_SLEEP_MS);
   }
   return done;
 }

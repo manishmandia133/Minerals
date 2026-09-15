@@ -1,7 +1,5 @@
 node_modules/
 data/raw/
 data/records/
-data/index.json
-data/CATALOG.md
-out/
+data/processed/
 .env
