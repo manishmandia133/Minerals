@@ -95,32 +95,40 @@ function PageLoader() {
     </div>
   );
 }
+// The AI chat is a standalone full-screen workspace — no navbar or footer.
+function AppShell() {
+  const { pathname } = useLocation();
+  const isChat = pathname === '/chat';
+  return (
+    <div style={{ background: 'var(--color-lavender-mist)', minHeight: '100vh', color: 'var(--color-ink)' }}>
+      {!isChat && <Header />}
+
+      <main>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/patents" element={<PatentExplorerPage />} />
+            <Route path="/research" element={<ResearchExplorerPage />} />
+            <Route path="/trends" element={<PatentTrendsPage />} />
+            <Route path="/ecosystem" element={<EcosystemPage />} />
+            <Route path="/chat" element={<AIChatPage />} />
+            <Route path="/help" element={<HelpPage />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="*" element={<HomePage />} />
+          </Routes>
+        </Suspense>
+      </main>
+
+      {!isChat && <FooterSection5 />}
+    </div>
+  );
+}
 export default function App() {
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       <ScrollToTop />
       <PageViewTransition />
-      <div style={{ background: 'var(--color-lavender-mist)', minHeight: '100vh', color: 'var(--color-ink)' }}>
-        <Header />
-
-        <main>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/patents" element={<PatentExplorerPage />} />
-              <Route path="/research" element={<ResearchExplorerPage />} />
-              <Route path="/trends" element={<PatentTrendsPage />} />
-              <Route path="/ecosystem" element={<EcosystemPage />} />
-              <Route path="/chat" element={<AIChatPage />} />
-              <Route path="/help" element={<HelpPage />} />
-              <Route path="/terms" element={<TermsPage />} />
-              <Route path="*" element={<HomePage />} />
-            </Routes>
-          </Suspense>
-        </main>
-
-        <FooterSection5 />
-      </div>
+      <AppShell />
     </BrowserRouter>
   );
 }

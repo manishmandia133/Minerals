@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useMemo, useDeferredValue, memo } from 'react';
 import { PATENT_RECORDS, CRITICAL_MINERALS } from '../data/mineralsData';
-import { fetchBackendRecords, triggerBackendFetch } from '../services/api';
+import { getPatentsLive, fetchPatents } from '../api.client';
 import {
   Search,
   ExternalLink,
@@ -300,41 +300,46 @@ export default function PatentExplorerPage() {
   const [bookmarkedIds, setBookmarkedIds] = useState([]);
   const [bookmarksOnly, setBookmarksOnly] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
+  const [isLoadingRecords, setIsLoadingRecords] = useState(true);
+  const [usingLiveData, setUsingLiveData] = useState(false);
 
+  // Live patent corpus first, cached PATENT_RECORDS as fallback.
   useEffect(() => {
-    fetchBackendRecords(50).then((res) => {
-      if (res.success && res.records.length > 0) {
-        const formatted = res.records.map((r) => ({
-          id: r.id || r.publication_number || 'REC-' + Math.random().toString(36).slice(2, 8),
-          publicationNumber: r.publication_number || r.id || 'IN-PATENT',
-          title: r.title || 'Untitled mineral patent',
-          mineral: r.mineral || 'Critical mineral',
-          category: r.category || 'Upstream Extraction',
-          applicant: r.organisation || (r.applicants_or_authors && r.applicants_or_authors[0]) || 'Indian applicant',
-          inventors: r.applicants_or_authors || ['Principal investigator'],
-          filingDate: r.publication_date || '2024-01-01',
-          grantStatus: r.kind === 'research' ? 'Published research' : 'Indian patent',
-          ipcCodes: ['C22B', 'H01M'],
-          trl: 6,
-          citations: r.citation_count || 4,
-          abstract: r.abstract || 'Abstract pending.',
-          sourceUrl: r.source_url || 'https://ipindiaservices.gov.in/publicsearch',
-        }));
-        setRecords([...PATENT_RECORDS, ...formatted]);
-      }
-    });
+    let cancelled = false;
+    getPatentsLive()
+      .then((live) => {
+        if (cancelled) return;
+        if (live.length > 0) {
+          setRecords(live);
+          setUsingLiveData(true);
+        }
+      })
+      .catch(() => {
+        // Transport error — keep the cached fallback below.
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingRecords(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleLiveSync = async () => {
     setIsSyncing(true);
-    setSyncMessage('Contacting IPO InPASS…');
-    const res = await triggerBackendFetch('lithium extraction India', 2, true);
-    if (res.success) {
-      setSyncMessage('Updated from IPO InPASS.');
-      const recRes = await fetchBackendRecords(50);
-      if (recRes.success && recRes.records.length > 0) setRecords([...recRes.records, ...PATENT_RECORDS]);
-    } else {
-      setSyncMessage('IPO unreachable — showing cached copy dated Sep 2026.');
+    setSyncMessage('Contacting patent corpus…');
+    try {
+      await fetchPatents({ patents: 'lithium extraction India', patent_pages: 2 });
+      const live = await getPatentsLive();
+      if (live.length > 0) {
+        setRecords(live);
+        setUsingLiveData(true);
+        setSyncMessage(`Updated from live corpus — ${live.length} records.`);
+      } else {
+        setSyncMessage('Corpus returned no records — showing cached copy.');
+      }
+    } catch {
+      setSyncMessage('Corpus unreachable — showing cached copy dated Sep 2026.');
     }
     setTimeout(() => {
       setIsSyncing(false);
@@ -443,7 +448,7 @@ export default function PatentExplorerPage() {
             <ChevronRight style={{ width: '12px', height: '12px' }} />
             <span style={{ color: INK, fontWeight: 600 }}>Patent search</span>
           </div>
-          <div>Source: IPO InPASS (ipindiaservices.gov.in) · Cached Sep 2026 · IN jurisdiction</div>
+          <div>Source: {usingLiveData ? 'Live patent corpus' : 'IPO InPASS (ipindiaservices.gov.in) · Cached Sep 2026'} · IN jurisdiction</div>
         </div>
 
         {/* title row */}
@@ -511,7 +516,14 @@ export default function PatentExplorerPage() {
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginTop: '10px' }}>
             <div style={{ fontSize: '13px', color: MUTED }}>
-              <strong style={{ color: INK }}>{filteredRecords.length}</strong> of {records.length} records
+              {isLoadingRecords ? (
+                'Loading live records…'
+              ) : (
+                <>
+                  <strong style={{ color: INK }}>{filteredRecords.length}</strong> of {records.length} records
+                  {usingLiveData && <span> · live</span>}
+                </>
+              )}
               {bookmarkedIds.length > 0 && <span> · {bookmarkedIds.length} saved</span>}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: MUTED }}>
@@ -750,7 +762,8 @@ function PatentDrawer({ patent, onClose, onCopy, copied }) {
       style={{
         position: 'fixed', inset: 0, zIndex: 100,
         background: 'rgba(16,24,40,.5)',
-        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '24px',
       }}
     >
       <div
@@ -761,27 +774,21 @@ function PatentDrawer({ patent, onClose, onCopy, copied }) {
         className="pat-drawer"
         style={{
           background: PANEL,
-          borderRadius: '24px 24px 0 0',
+          borderRadius: '24px',
           width: 'min(960px, 100%)',
           maxHeight: '88vh',
           overflowY: 'auto',
           border: `1px solid ${LINE}`,
-          borderBottom: 'none',
-          boxShadow: '0 -24px 64px -12px rgba(16, 24, 40, 0.35)',
-          transform: open ? 'translateY(0)' : 'translateY(100%)',
+          boxShadow: '0 20px 50px rgba(16, 24, 40, 0.25)',
+          transform: open ? 'translateY(0) scale(1)' : 'translateY(24px) scale(0.98)',
+          opacity: open ? 1 : 0,
           transition: open
-            ? 'transform 0.55s cubic-bezier(0.32, 0.72, 0, 1)'
-            : 'transform 0.32s cubic-bezier(0.5, 0, 0.75, 0)',
-          willChange: 'transform',
+            ? 'transform 0.45s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.25s ease'
+            : 'transform 0.3s cubic-bezier(0.5, 0, 0.75, 0), opacity 0.2s ease',
+          willChange: 'transform, opacity',
         }}
       >
-        <div
-          aria-hidden="true"
-          style={{ padding: '12px 0 4px', display: 'flex', justifyContent: 'center', position: 'sticky', top: 0, background: PANEL, zIndex: 2 }}
-        >
-          <span style={{ width: '44px', height: '5px', borderRadius: '999px', background: LINE }} />
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', padding: '10px 36px 20px', borderBottom: `1px solid ${LINE}`, position: 'sticky', top: '21px', background: PANEL, zIndex: 2 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', padding: '28px 36px 20px', borderBottom: `1px solid ${LINE}`, position: 'sticky', top: 0, background: PANEL, zIndex: 2 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
               <span className="badge badge-indigo">{patent.mineral}</span>

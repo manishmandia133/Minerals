@@ -1,6 +1,6 @@
 // R&D Ecosystem Page — institutions + vulnerability radar.
 // Heavy patent velocity analytics live on /trends; patent records on /patents; papers on /research.
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import TechnologyGapsSection from '../components/sections/TechnologyGapsSection';
 import { useScrollReveal } from '../components/common/useScrollReveal';
@@ -9,6 +9,7 @@ import CountUp from '../components/bits/CountUp';
 import SpotlightCard from '../components/bits/SpotlightCard';
 import StarBorder from '../components/bits/StarBorder';
 import { PLATFORM_STATS, TECHNOLOGY_GAPS, LEADING_ORGANISATIONS } from '../data/mineralsData';
+import { getPatentsLive, getResearchesLive, classifyInstitution } from '../api.client';
 import { TrendingUp, FileText, BookOpen, ArrowUpRight, Building2, MapPin, FlaskConical, Network, Sparkles } from 'lucide-react';
 
 const INK = 'var(--color-ink)';
@@ -17,11 +18,8 @@ const HAZE = 'var(--color-haze)';
 const MIST = 'var(--color-lavender-mist)';
 
 const criticalGaps = TECHNOLOGY_GAPS.filter((g) => g.vulnerabilityLevel === 'Critical').length;
-// Top 4 institutions by patent volume — the only ones shown in Leading Institutions
-const TOP_ORGS = [...LEADING_ORGANISATIONS].sort((a, b) => b.patentsCount - a.patentsCount).slice(0, 4);
-const maxOrgPatents = Math.max(...TOP_ORGS.map((o) => o.patentsCount));
-const totalOrgPatents = TOP_ORGS.reduce((a, o) => a + o.patentsCount, 0);
-const totalOrgPapers = TOP_ORGS.reduce((a, o) => a + o.activeResearchPapers, 0);
+// Static fallback leaderboard (cached copy) when the live corpus is unreachable.
+const STATIC_TOP_ORGS = [...LEADING_ORGANISATIONS].sort((a, b) => b.patentsCount - a.patentsCount).slice(0, 4);
 
 function orgTypeShort(type = '') {
   const t = type.toLowerCase();
@@ -79,11 +77,99 @@ const SHORTCUTS = [
 
 export default function EcosystemPage() {
   useScrollReveal();
-  const [selectedOrg, setSelectedOrg] = useState(TOP_ORGS[0]);
+  // Live corpus first; static LEADING_ORGANISATIONS / PLATFORM_STATS fallback.
+  const [livePatents, setLivePatents] = useState(null);
+  const [liveResearch, setLiveResearch] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getPatentsLive()
+      .then((p) => {
+        if (!cancelled) setLivePatents(p);
+      })
+      .catch(() => {
+        if (!cancelled) setLivePatents([]);
+      });
+    getResearchesLive()
+      .then((r) => {
+        if (!cancelled) setLiveResearch(r);
+      })
+      .catch(() => {
+        if (!cancelled) setLiveResearch([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Top 4 organisations by live patent + paper volume.
+  const liveTopOrgs = useMemo(() => {
+    if (!livePatents?.length && !liveResearch?.length) return null;
+    const byOrg = {};
+    const touch = (name, kind, mineral, tech) => {
+      const key = (name || 'Unknown').trim() || 'Unknown';
+      const o = (byOrg[key] =
+        byOrg[key] || { name: key, patents: 0, papers: 0, minerals: {}, techs: {} });
+      if (kind === 'patent') o.patents += 1;
+      else o.papers += 1;
+      const m = (mineral || '').trim();
+      if (m) o.minerals[m] = (o.minerals[m] || 0) + 1;
+      const t = (tech || '').trim();
+      if (t) o.techs[t] = (o.techs[t] || 0) + 1;
+    };
+    (livePatents || []).forEach((p) => touch(p.applicant, 'patent', p.mineral, p.category));
+    (liveResearch || []).forEach((p) => touch(p.institution, 'paper', p.mineral, p.domain));
+    const ranked = Object.values(byOrg).sort(
+      (a, b) => b.patents + b.papers - (a.patents + a.papers)
+    );
+    if (ranked.length === 0) return null;
+    return ranked.slice(0, 4).map((o, i) => ({
+      id: `live-org-${i}`,
+      name: o.name,
+      location: 'India',
+      type: classifyInstitution(o.name),
+      patentsCount: o.patents,
+      activeResearchPapers: o.papers,
+      citationImpact: null,
+      flagshipTech:
+        Object.entries(o.techs)
+          .sort((a, b) => b[1] - a[1])
+          .map(([t]) => t)[0] || 'Critical minerals R&D',
+      topMinerals: Object.entries(o.minerals)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([m]) => m),
+      trlSpecialization: '—',
+      networkPartners: [],
+    }));
+  }, [livePatents, liveResearch]);
+
+  const TOP_ORGS = liveTopOrgs || STATIC_TOP_ORGS;
+  const maxOrgPatents = Math.max(...TOP_ORGS.map((o) => o.patentsCount), 1);
+  const totalOrgPatents = TOP_ORGS.reduce((a, o) => a + o.patentsCount, 0);
+  const totalOrgPapers = TOP_ORGS.reduce((a, o) => a + (o.activeResearchPapers || 0), 0);
+  const usingLive = !!liveTopOrgs;
+  const livePatentCount = livePatents?.length || 0;
+  const liveOrgCount = useMemo(() => {
+    const names = new Set();
+    (livePatents || []).forEach((p) => {
+      const n = (p.applicant || '').trim();
+      if (n) names.add(n.toLowerCase());
+    });
+    (liveResearch || []).forEach((p) => {
+      const n = (p.institution || '').trim();
+      if (n) names.add(n.toLowerCase());
+    });
+    return names.size;
+  }, [livePatents, liveResearch]);
+
+  const [selectedOrgId, setSelectedOrgId] = useState(null);
+  const selectedOrg = TOP_ORGS.find((o) => o.id === selectedOrgId) ?? TOP_ORGS[0];
+  const setSelectedOrg = (org) => setSelectedOrgId(org?.id ?? null);
 
   const kpis = [
-    { label: 'Active R&D Institutions', to: PLATFORM_STATS.activeRndInstitutions, separator: '', suffix: '', sub: 'CSIR • IITs • PSUs • Industry', accent: false },
-    { label: 'Patents Tracked', to: PLATFORM_STATS.totalPatentsTracked, separator: ',', suffix: '', sub: 'IPO InPASS critical-minerals register', accent: true },
+    { label: 'Active R&D Institutions', to: usingLive ? liveOrgCount : PLATFORM_STATS.activeRndInstitutions, separator: '', suffix: '', sub: 'CSIR • IITs • PSUs • Industry', accent: false },
+    { label: 'Patents Tracked', to: usingLive ? livePatentCount : PLATFORM_STATS.totalPatentsTracked, separator: ',', suffix: '', sub: usingLive ? 'Live patent corpus' : 'IPO InPASS critical-minerals register', accent: true },
     { label: 'Critical Gaps', to: criticalGaps, separator: '', suffix: '', sub: '100% import-dependent bottlenecks', accent: false },
     { label: 'Average India TRL', to: PLATFORM_STATS.averageIndiaTRL, separator: '', suffix: ' / 9', sub: 'Bench-to-pilot readiness', accent: false },
   ];
@@ -111,8 +197,8 @@ export default function EcosystemPage() {
           </h1>
           <p style={{ color: GRAPHITE, fontSize: '15px', marginTop: '8px', maxWidth: '700px' }}>
             Who leads India&apos;s critical-minerals R&amp;D and where sovereign capability
-            still trails the global frontier — {PLATFORM_STATS.activeRndInstitutions} institutions,{' '}
-            {PLATFORM_STATS.totalPatentsTracked.toLocaleString()} patents, {criticalGaps} critical gaps.
+            still trails the global frontier — {usingLive ? liveOrgCount : PLATFORM_STATS.activeRndInstitutions} institutions,{' '}
+            {(usingLive ? livePatentCount : PLATFORM_STATS.totalPatentsTracked).toLocaleString()} patents, {criticalGaps} critical gaps.
           </p>
         </div>
 
@@ -229,11 +315,11 @@ export default function EcosystemPage() {
                   <div style={{ fontSize: '12px', color: GRAPHITE, marginBottom: '18px' }}>{selectedOrg.type} • {selectedOrg.location}</div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '18px' }}>
-                    {[
-                      ['Patents', String(selectedOrg.patentsCount)],
-                      ['Papers', String(selectedOrg.activeResearchPapers)],
-                      ['Cite impact', selectedOrg.citationImpact.toFixed(1)],
-                    ].map(([k, v]) => (
+                      {[
+                        ['Patents', String(selectedOrg.patentsCount)],
+                        ['Papers', String(selectedOrg.activeResearchPapers ?? 0)],
+                        ['Cite impact', selectedOrg.citationImpact != null ? selectedOrg.citationImpact.toFixed(1) : '—'],
+                      ].map(([k, v]) => (
                       <div key={k} className="stat-box-dossier">
                         <div style={{ fontSize: '20px', fontWeight: 500, color: 'var(--color-electric-indigo)' }}>{v}</div>
                         <div style={{ fontSize: '11px', color: GRAPHITE, marginTop: '2px' }}>{k}</div>

@@ -1,13 +1,14 @@
 // Home Page — Master Landing Page inspired by Lusion.co
 // Features 3D Sculpture Hero, Quick Portal Navigators, 3D Simulation Reel, Value Chain Mapping, Leading Orgs, and Technology Gaps
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import HeroSection from '../components/sections/HeroSection';
 import TechMappingSection from '../components/sections/TechMappingSection';
 import MineralGallerySection from '../components/sections/MineralGallerySection';
 import SplitText from '../components/bits/SplitText';
 import SpotlightCard from '../components/bits/SpotlightCard';
 import { useScrollReveal } from '../components/common/useScrollReveal';
+import { getPatentsLive, getResearchesLive } from '../api.client';
 import { Link } from 'react-router-dom';
 import {
   Database,
@@ -18,14 +19,34 @@ import {
 } from 'lucide-react';
 export default function HomePage() {
   const [activeMineral, setActiveMineral] = useState('lithium');
+  // Live corpus counts for portal badges + hero stats (static fallback).
+  const [patentCount, setPatentCount] = useState(null);
+  const [researchCount, setResearchCount] = useState(null);
   useScrollReveal();
+
+  useEffect(() => {
+    let cancelled = false;
+    getPatentsLive()
+      .then((p) => {
+        if (!cancelled && p.length > 0) setPatentCount(p.length);
+      })
+      .catch(() => {});
+    getResearchesLive()
+      .then((r) => {
+        if (!cancelled && r.length > 0) setResearchCount(r.length);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const portalCards = [
     {
       title: 'Patents Explorer',
       description: 'Searchable Indian Patent Office repository with full patent specifications, IPC classification codes, and verified legal status.',
       path: '/patents',
-      badge: '1,420+ Patents',
+      badge: patentCount != null ? `${patentCount.toLocaleString()}+ Patents` : '1,420+ Patents',
       icon: Database,
       accent: 'var(--color-electric-indigo)',
     },
@@ -33,7 +54,7 @@ export default function HomePage() {
       title: 'Research Explorer',
       description: 'Peer-reviewed scientific publications, OpenAlex indexed papers, and laboratory extraction breakthroughs from premier Indian institutions.',
       path: '/research',
-      badge: '3,850+ Papers',
+      badge: researchCount != null ? `${researchCount.toLocaleString()}+ Papers` : '3,850+ Papers',
       icon: BookOpen,
       accent: '#059669',
     },
@@ -61,6 +82,8 @@ export default function HomePage() {
       <HeroSection
         activeMineral={activeMineral}
         setActiveMineral={setActiveMineral}
+        patentCount={patentCount}
+        researchCount={researchCount}
       />
 
       {/* Quick Portals Navigation Section with Scroll Reveal */}

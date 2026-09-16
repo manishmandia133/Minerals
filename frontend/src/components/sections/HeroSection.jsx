@@ -65,7 +65,7 @@ const s = {
   },
 };
 
-export default function HeroSection({ activeMineral, setActiveMineral }) {
+export default function HeroSection({ activeMineral, setActiveMineral, patentCount, researchCount }) {
   const currentMineral = CRITICAL_MINERALS.find((m) => m.id === activeMineral) || CRITICAL_MINERALS[0];
 
   return (
@@ -206,8 +206,8 @@ export default function HeroSection({ activeMineral, setActiveMineral }) {
           marginTop: '16px',
         }}>
           {[
-            { label: 'Patents Tracked', value: <><CountUp to={PLATFORM_STATS.totalPatentsTracked} separator="," duration={1.8} />+</> },
-            { label: 'Research Works', value: <><CountUp to={PLATFORM_STATS.totalResearchArticles} separator="," duration={1.8} />+</> },
+            { label: 'Patents Tracked', value: <><CountUp to={patentCount ?? PLATFORM_STATS.totalPatentsTracked} separator="," duration={1.8} />+</> },
+            { label: 'Research Works', value: <><CountUp to={researchCount ?? PLATFORM_STATS.totalResearchArticles} separator="," duration={1.8} />+</> },
             { label: 'Critical Minerals', value: <CountUp to={PLATFORM_STATS.notifiedMinerals} duration={1.4} /> },
             { label: 'R&D Institutions', value: <CountUp to={PLATFORM_STATS.activeRndInstitutions} duration={1.4} /> },
           ].map((stat) => (

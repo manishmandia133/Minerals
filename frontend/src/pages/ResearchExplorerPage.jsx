@@ -1,8 +1,9 @@
 // Research Explorer Page — Dedicated Full-Page Indian Scientific & R&D Publications Repository
 // Indexed from OpenAlex, CSIR Labs, IITs, IISc, and premier metallurgy & materials journals
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { RESEARCH_PUBLICATIONS } from '../data/researchData';
+import { getResearchesLive } from '../api.client';
 import { useScrollReveal } from '../components/common/useScrollReveal';
 import {
   BookOpen,
@@ -18,7 +19,10 @@ import {
 import { Link } from 'react-router-dom';
 
 export default function ResearchExplorerPage() {
-  const [publications] = useState(RESEARCH_PUBLICATIONS);
+  // Live research corpus first, cached RESEARCH_PUBLICATIONS as fallback.
+  const [publications, setPublications] = useState(RESEARCH_PUBLICATIONS);
+  const [isLoading, setIsLoading] = useState(true);
+  const [usingLiveData, setUsingLiveData] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMineral, setSelectedMineral] = useState('all');
   const [selectedInstType, setSelectedInstType] = useState('all');
@@ -29,6 +33,27 @@ export default function ResearchExplorerPage() {
 
   useScrollReveal();
 
+  useEffect(() => {
+    let cancelled = false;
+    getResearchesLive()
+      .then((live) => {
+        if (cancelled) return;
+        if (live.length > 0) {
+          setPublications(live);
+          setUsingLiveData(true);
+        }
+      })
+      .catch(() => {
+        // Transport error — keep the cached fallback.
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const toggleBookmark = (id, e) => {
     e.stopPropagation();
 
@@ -38,7 +63,8 @@ export default function ResearchExplorerPage() {
   };
 
   const handleCopyCitation = (paper) => {
-    const citation = `${paper.authors.join(', ')} (${paper.year}). "${paper.title}". ${paper.journal}. DOI: ${paper.doi}.`;
+    const doiPart = paper.doi ? ` DOI: ${paper.doi}.` : '';
+    const citation = `${(paper.authors || []).join(', ')} (${paper.year || 'n.d.'}). "${paper.title}". ${paper.journal}.${doiPart}`;
     navigator.clipboard.writeText(citation);
     setCopiedId(paper.id);
 
@@ -111,6 +137,7 @@ export default function ResearchExplorerPage() {
             </span>
             <span className="badge">Peer-Reviewed Literature</span>
             <span className="badge badge-indigo">CSIR • IITs • IISc • BARC</span>
+            <span className="badge">{isLoading ? 'Connecting…' : usingLiveData ? 'Live corpus' : 'Cached copy'}</span>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '20px' }}>
@@ -363,7 +390,7 @@ export default function ResearchExplorerPage() {
                         {paper.mineral}
                       </span>
                       <span className="badge" style={{ fontSize: '11px', padding: '2px 8px' }}>
-                        {paper.year}
+                        {paper.year || 'n.d.'}
                       </span>
                       <span className="badge badge-emerald" style={{ fontSize: '11px', padding: '2px 8px' }}>
                         {paper.citations} Citations
@@ -558,7 +585,8 @@ function PaperDrawer({ paper, onClose, onCopy, copied }) {
       style={{
         position: 'fixed', inset: 0, zIndex: 100,
         background: 'rgba(16,24,40,.5)',
-        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '24px',
       }}
     >
       <div
@@ -569,31 +597,27 @@ function PaperDrawer({ paper, onClose, onCopy, copied }) {
         className="res-drawer"
         style={{
           background: 'var(--color-paper-white)',
-          borderRadius: '24px 24px 0 0',
+          borderRadius: '24px',
           width: 'min(960px, 100%)',
           maxHeight: '88vh',
           overflowY: 'auto',
           border: '1px solid var(--color-haze)',
-          borderBottom: 'none',
-          boxShadow: '0 -24px 64px -12px rgba(16, 24, 40, 0.35)',
-          transform: open ? 'translateY(0)' : 'translateY(100%)',
+          boxShadow: '0 20px 50px rgba(16, 24, 40, 0.25)',
+          transform: open ? 'translateY(0) scale(1)' : 'translateY(24px) scale(0.98)',
+          opacity: open ? 1 : 0,
           transition: open
-            ? 'transform 0.55s cubic-bezier(0.32, 0.72, 0, 1)'
-            : 'transform 0.32s cubic-bezier(0.5, 0, 0.75, 0)',
-          willChange: 'transform',
+            ? 'transform 0.45s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.25s ease'
+            : 'transform 0.3s cubic-bezier(0.5, 0, 0.75, 0), opacity 0.2s ease',
+          willChange: 'transform, opacity',
         }}
       >
-        <div aria-hidden="true" style={{ padding: '12px 0 4px', display: 'flex', justifyContent: 'center', position: 'sticky', top: 0, background: 'var(--color-paper-white)', zIndex: 2 }}>
-          <span style={{ width: '44px', height: '5px', borderRadius: '999px', background: 'var(--color-haze)' }} />
-        </div>
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', padding: '10px 36px 20px', borderBottom: '1px solid var(--color-haze)', position: 'sticky', top: '21px', background: 'var(--color-paper-white)', zIndex: 2 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', padding: '28px 36px 20px', borderBottom: '1px solid var(--color-haze)', position: 'sticky', top: 0, background: 'var(--color-paper-white)', zIndex: 2 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
               <span className="badge badge-indigo">{paper.mineral}</span>
               <span className="badge badge-emerald">{paper.citations} Citations</span>
               <span className="badge">TRL {paper.trl} / 9</span>
-              <span className="badge">{paper.year}</span>
+              <span className="badge">{paper.year || 'n.d.'}</span>
             </div>
             <h2 style={{ fontSize: '22px', fontWeight: 500, lineHeight: 1.3, color: 'var(--color-ink)' }}>
               {paper.title}
@@ -668,7 +692,7 @@ function PaperDrawer({ paper, onClose, onCopy, copied }) {
                 Digital Object ID (DOI)
               </span>
               <span style={{ fontWeight: 500, color: 'var(--color-electric-indigo)', marginTop: '2px', display: 'block' }}>
-                {paper.doi}
+                {paper.doi || '—'}
               </span>
             </div>
           </div>
@@ -748,16 +772,18 @@ function PaperDrawer({ paper, onClose, onCopy, copied }) {
             }}
           >
             <div style={{ display: 'flex', gap: '10px' }}>
-              <a
-                href={paper.openAccessUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-pill btn-pill-indigo"
-                style={{ fontSize: '12px', padding: '12px 20px' }}
-              >
-                <ExternalLink style={{ width: '13px', height: '13px' }} />
-                <span>Open DOI Publisher Article</span>
-              </a>
+              {paper.openAccessUrl ? (
+                <a
+                  href={paper.openAccessUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-pill btn-pill-indigo"
+                  style={{ fontSize: '12px', padding: '12px 20px' }}
+                >
+                  <ExternalLink style={{ width: '13px', height: '13px' }} />
+                  <span>Open DOI Publisher Article</span>
+                </a>
+              ) : null}
 
               <button
                 onClick={onCopy}

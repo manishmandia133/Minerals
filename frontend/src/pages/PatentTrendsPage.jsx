@@ -1,8 +1,9 @@
 // Patent Trends & Velocity Page — Dedicated Full-Page Analytics & Strategic Forecasting
 // Pure Lusion light aesthetic: Lavender Mist canvas, paper-white cards, Electric Indigo accent
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ANNUAL_TRENDS, LEADING_ORGANISATIONS } from '../data/mineralsData';
+import { getPatentsLive, getResearchesLive, classifyInstitution } from '../api.client';
 import { useScrollReveal } from '../components/common/useScrollReveal';
 import SplitText from '../components/bits/SplitText';
 import CountUp from '../components/bits/CountUp';
@@ -17,29 +18,214 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+// Static fallbacks (cached copy) when the live corpus is unreachable.
+const STATIC_MINERAL_BREAKDOWN = [
+  { name: 'Lithium & Li-Ion Batteries', share: 44, color: '#1a2ffb', count: 550, velocity: '+42% YoY', trl: 'TRL 5-7' },
+  { name: 'Rare Earth Elements (Nd/Dy)', share: 20, color: '#f59e0b', count: 250, velocity: '+28% YoY', trl: 'TRL 6-7' },
+  { name: 'Graphite & Anode Nanotech', share: 15, color: '#10b981', count: 187, velocity: '+24% YoY', trl: 'TRL 6' },
+  { name: 'Cobalt & Nickel Chemistries', share: 13, color: '#8b5cf6', count: 162, velocity: '+19% YoY', trl: 'TRL 5-8' },
+  { name: 'Titanium, Gallium & Semis', share: 8, color: '#06b6d4', count: 101, velocity: '+15% YoY', trl: 'TRL 6-7' },
+];
+
+const STATIC_APPLICANT_DYNAMICS = [
+  { entity: 'CSIR National Labs (NML, IMMT, CSMCRI)', share: 38, count: '480 Patents', color: '#1a2ffb', tag: 'Sovereign R&D' },
+  { entity: 'IITs & Academic Institutes (Bombay, Madras, IISc)', share: 26, count: '325 Patents', color: '#10b981', tag: 'Academic IP' },
+  { entity: 'Domestic Corporate Leaders (Tata, Vedanta, Hindalco)', share: 18, count: '228 Patents', color: '#f59e0b', tag: 'Industrial' },
+  { entity: 'Foreign Entities Filing in Indian Patent Office', share: 18, count: '227 Patents', color: '#8b5cf6', tag: 'MNCs & Global' },
+];
+
+const BREAKDOWN_COLORS = ['#1a2ffb', '#f59e0b', '#10b981', '#8b5cf6', '#06b6d4'];
+
 export default function PatentTrendsPage() {
-  const [activeYearIndex, setActiveYearIndex] = useState(ANNUAL_TRENDS.length - 1);
+  // Live corpus first; static ANNUAL_TRENDS / LEADING_ORGANISATIONS fallback.
+  const [livePatents, setLivePatents] = useState(null);
+  const [liveResearch, setLiveResearch] = useState(null);
 
   useScrollReveal();
 
-  const activeYearData = ANNUAL_TRENDS[activeYearIndex];
-  const maxPatents = Math.max(...ANNUAL_TRENDS.map((t) => t.patents));
-  const maxResearch = Math.max(...ANNUAL_TRENDS.map((t) => t.research));
+  useEffect(() => {
+    let cancelled = false;
+    getPatentsLive()
+      .then((p) => {
+        if (!cancelled) setLivePatents(p);
+      })
+      .catch(() => {
+        if (!cancelled) setLivePatents([]);
+      });
+    getResearchesLive()
+      .then((r) => {
+        if (!cancelled) setLiveResearch(r);
+      })
+      .catch(() => {
+        if (!cancelled) setLiveResearch([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const mineralBreakdown = [
-    { name: 'Lithium & Li-Ion Batteries', share: 44, color: '#1a2ffb', count: 550, velocity: '+42% YoY', trl: 'TRL 5-7' },
-    { name: 'Rare Earth Elements (Nd/Dy)', share: 20, color: '#f59e0b', count: 250, velocity: '+28% YoY', trl: 'TRL 6-7' },
-    { name: 'Graphite & Anode Nanotech', share: 15, color: '#10b981', count: 187, velocity: '+24% YoY', trl: 'TRL 6' },
-    { name: 'Cobalt & Nickel Chemistries', share: 13, color: '#8b5cf6', count: 162, velocity: '+19% YoY', trl: 'TRL 5-8' },
-    { name: 'Titanium, Gallium & Semis', share: 8, color: '#06b6d4', count: 101, velocity: '+15% YoY', trl: 'TRL 6-7' },
-  ];
+  const usingLive = (livePatents?.length || 0) > 0 || (liveResearch?.length || 0) > 0;
 
-  const applicantDynamics = [
-    { entity: 'CSIR National Labs (NML, IMMT, CSMCRI)', share: 38, count: '480 Patents', color: '#1a2ffb', tag: 'Sovereign R&D' },
-    { entity: 'IITs & Academic Institutes (Bombay, Madras, IISc)', share: 26, count: '325 Patents', color: '#10b981', tag: 'Academic IP' },
-    { entity: 'Domestic Corporate Leaders (Tata, Vedanta, Hindalco)', share: 18, count: '228 Patents', color: '#f59e0b', tag: 'Industrial' },
-    { entity: 'Foreign Entities Filing in Indian Patent Office', share: 18, count: '227 Patents', color: '#8b5cf6', tag: 'MNCs & Global' },
-  ];
+  // Annual filing trajectory aggregated from live filing/publication years.
+  const annualTrends = useMemo(() => {
+    if (!livePatents?.length && !liveResearch?.length) return ANNUAL_TRENDS;
+    const byYear = {};
+    (livePatents || []).forEach((p) => {
+      const y = Number((p.filingDate || '').slice(0, 4)) || 0;
+      if (y > 1990 && y < 2100) {
+        byYear[y] = byYear[y] || { year: y, patents: 0, research: 0 };
+        byYear[y].patents += 1;
+      }
+    });
+    (liveResearch || []).forEach((p) => {
+      const y = Number(p.year) || 0;
+      if (y > 1990 && y < 2100) {
+        byYear[y] = byYear[y] || { year: y, patents: 0, research: 0 };
+        byYear[y].research += 1;
+      }
+    });
+    const years = Object.keys(byYear)
+      .map(Number)
+      .sort((a, b) => a - b);
+    if (years.length === 0) return ANNUAL_TRENDS;
+    // Domestic/foreign origin isn't exposed by the API — reuse the static
+    // curve where the year matches, 82% otherwise.
+    const staticShare = Object.fromEntries(ANNUAL_TRENDS.map((t) => [t.year, t.domesticShare]));
+    return years.slice(-11).map((y) => ({
+      year: y,
+      patents: byYear[y].patents,
+      research: byYear[y].research,
+      domesticShare: staticShare[y] ?? 82,
+    }));
+  }, [livePatents, liveResearch]);
+
+  const [activeYearIndex, setActiveYearIndex] = useState(ANNUAL_TRENDS.length - 1);
+  const safeYearIndex = Math.min(Math.max(activeYearIndex, 0), annualTrends.length - 1);
+  const activeYearData = annualTrends[safeYearIndex];
+  const maxPatents = Math.max(...annualTrends.map((t) => t.patents), 1);
+  const maxResearch = Math.max(...annualTrends.map((t) => t.research), 1);
+
+  // Mineral velocity from live mineral counts (+ YoY on the latest year).
+  const mineralBreakdown = useMemo(() => {
+    if (!livePatents?.length) return STATIC_MINERAL_BREAKDOWN;
+    const years = livePatents
+      .map((p) => Number((p.filingDate || '').slice(0, 4)) || 0)
+      .filter((y) => y > 1990 && y < 2100);
+    const latest = years.length > 0 ? Math.max(...years) : 0;
+    const totals = {};
+    const cur = {};
+    const prev = {};
+    livePatents.forEach((p) => {
+      const m = (p.mineral || 'Other').trim() || 'Other';
+      const y = Number((p.filingDate || '').slice(0, 4)) || 0;
+      totals[m] = (totals[m] || 0) + 1;
+      if (y === latest) cur[m] = (cur[m] || 0) + 1;
+      else if (y === latest - 1) prev[m] = (prev[m] || 0) + 1;
+    });
+    const total = livePatents.length || 1;
+    return Object.entries(totals)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([name, count], i) => {
+        const c = cur[name] || 0;
+        const pr = prev[name] || 0;
+        const velocity =
+          pr > 0
+            ? `${c - pr >= 0 ? '+' : ''}${Math.round(((c - pr) / pr) * 100)}% YoY`
+            : c > 0
+              ? 'New'
+              : 'Stable';
+        const staticMatch = STATIC_MINERAL_BREAKDOWN.find((s) =>
+          s.name.toLowerCase().includes(name.toLowerCase().split(' ')[0])
+        );
+        return {
+          name,
+          share: Math.round((count / total) * 100),
+          color: BREAKDOWN_COLORS[i % BREAKDOWN_COLORS.length],
+          count,
+          velocity,
+          trl: staticMatch ? staticMatch.trl : 'TRL 5+',
+        };
+      });
+  }, [livePatents]);
+
+  // Applicant shares from live applicant/organisation counts.
+  const applicantDynamics = useMemo(() => {
+    if (!livePatents?.length) return STATIC_APPLICANT_DYNAMICS;
+    const counts = {};
+    livePatents.forEach((p) => {
+      const o = (p.applicant || 'Unknown').trim() || 'Unknown';
+      counts[o] = (counts[o] || 0) + 1;
+    });
+    const total = livePatents.length || 1;
+    const tagFor = (name) => {
+      const c = classifyInstitution(name);
+      if (c === 'CSIR National Laboratories') return 'Sovereign R&D';
+      if (c === 'IITs & Academia') return 'Academic IP';
+      if (c === 'Strategic PSUs & DAE') return 'Strategic PSU';
+      if (c === 'Corporate & Industrial R&D') return 'Industrial';
+      return 'Research Org';
+    };
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 4)
+      .map(([entity, count], i) => ({
+        entity,
+        share: Math.round((count / total) * 100),
+        count: `${count} Patents`,
+        color: BREAKDOWN_COLORS[i % BREAKDOWN_COLORS.length],
+        tag: tagFor(entity),
+      }));
+  }, [livePatents]);
+
+  // Institutional leaderboard aggregated from live applicant counts.
+  const leaderboardOrgs = useMemo(() => {
+    if (!livePatents?.length) return LEADING_ORGANISATIONS;
+    const byOrg = {};
+    livePatents.forEach((p) => {
+      const name = (p.applicant || 'Unknown').trim() || 'Unknown';
+      const o = (byOrg[name] = byOrg[name] || { name, count: 0, minerals: {} });
+      o.count += 1;
+      const m = (p.mineral || '').trim();
+      if (m) o.minerals[m] = (o.minerals[m] || 0) + 1;
+    });
+    return Object.values(byOrg)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8)
+      .map((o, i) => ({
+        id: `live-org-${i}`,
+        name: o.name,
+        location: 'India',
+        type: classifyInstitution(o.name),
+        patentsCount: o.count,
+        citationImpact: null,
+        topMinerals: Object.entries(o.minerals)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 3)
+          .map(([m]) => m),
+        trlSpecialization: '—',
+      }));
+  }, [livePatents]);
+
+  // KPI values — CAGR from the live trajectory when available.
+  const cagr = useMemo(() => {
+    if (!usingLive || annualTrends.length < 2) return null;
+    const first = annualTrends[0].patents;
+    const last = annualTrends[annualTrends.length - 1].patents;
+    const span = annualTrends[annualTrends.length - 1].year - annualTrends[0].year;
+    if (!first || first <= 0 || !span || span <= 0) return null;
+    return {
+      value: (Math.pow(last / first, 1 / span) - 1) * 100,
+      from: first,
+      fromYear: annualTrends[0].year,
+      to: last,
+      toYear: annualTrends[annualTrends.length - 1].year,
+    };
+  }, [usingLive, annualTrends]);
+
+  const peakMineral = mineralBreakdown[0];
+  const livePatentCount = livePatents?.length || 0;
+  const liveResearchCount = liveResearch?.length || 0;
 
   return (
     <div style={{ background: 'var(--color-lavender-mist)', minHeight: '100vh', paddingTop: '100px', paddingBottom: '90px' }}>
@@ -102,11 +288,13 @@ export default function PatentTrendsPage() {
               10-Year Filing CAGR
             </div>
             <div style={{ fontSize: '32px', fontWeight: 500, color: 'var(--color-electric-indigo)', marginTop: '4px' }}>
-              +<CountUp to={27.3} duration={1.6} />%
+              {cagr && cagr.value < 0 ? '' : '+'}<CountUp to={cagr ? cagr.value : 27.3} duration={1.6} />%
             </div>
             <div style={{ fontSize: '12px', color: '#059669', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <TrendingUp style={{ width: '12px', height: '12px' }} />
-              Surge from 112 (2016) to 1,250 (2026)
+              {cagr
+                ? `Surge from ${cagr.from} (${cagr.fromYear}) to ${cagr.to} (${cagr.toYear})`
+                : 'Surge from 112 (2016) to 1,250 (2026)'}
             </div>
           </SpotlightCard>
 
@@ -115,22 +303,28 @@ export default function PatentTrendsPage() {
               Peak Velocity Mineral
             </div>
             <div style={{ fontSize: '32px', fontWeight: 500, color: 'var(--color-ink)', marginTop: '4px' }}>
-              Lithium (+42%)
+              {peakMineral ? `${peakMineral.name} (${peakMineral.velocity})` : 'Lithium (+42%)'}
             </div>
             <div style={{ fontSize: '12px', color: 'var(--color-graphite)', marginTop: '4px' }}>
-              44% of total national filings in 2026
+              {peakMineral
+                ? `${peakMineral.share}% of total filings in ${annualTrends[annualTrends.length - 1].year}`
+                : '44% of total national filings in 2026'}
             </div>
           </SpotlightCard>
 
           <SpotlightCard className="card card-interactive" spotlightColor="rgba(26, 47, 251, 0.09)" style={{ padding: '20px 24px' }}>
             <div style={{ fontSize: '12px', color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '-0.02em' }}>
-              Domestic Sovereign IP
+              {usingLive ? 'Live Patent Records' : 'Domestic Sovereign IP'}
             </div>
             <div style={{ fontSize: '32px', fontWeight: 500, color: 'var(--color-ink)', marginTop: '4px' }}>
-              <CountUp to={84} duration={1.6} />.0%
+              {usingLive ? (
+                <CountUp to={livePatentCount} separator="," duration={1.6} />
+              ) : (
+                <><CountUp to={84} duration={1.6} />.0%</>
+              )}
             </div>
             <div style={{ fontSize: '12px', color: '#059669', marginTop: '4px' }}>
-              Indigenous CSIR, IIT &amp; Industry ratio
+              {usingLive ? 'Patent records in live corpus' : 'Indigenous CSIR, IIT & Industry ratio'}
             </div>
           </SpotlightCard>
 
@@ -139,7 +333,7 @@ export default function PatentTrendsPage() {
               Active Scientific Papers
             </div>
             <div style={{ fontSize: '32px', fontWeight: 500, color: 'var(--color-electric-indigo)', marginTop: '4px' }}>
-              <CountUp to={4950} separator="," duration={1.8} />+
+              <CountUp to={usingLive ? liveResearchCount : 4950} separator="," duration={1.8} />+
             </div>
             <div style={{ fontSize: '12px', color: 'var(--color-graphite)', marginTop: '4px' }}>
               OpenAlex peer-reviewed publications
@@ -226,8 +420,8 @@ export default function PatentTrendsPage() {
                 borderBottom: '1px solid var(--color-haze)',
               }}
             >
-              {ANNUAL_TRENDS.map((trend, idx) => {
-                const isSelected = idx === activeYearIndex;
+              {annualTrends.map((trend, idx) => {
+                const isSelected = idx === safeYearIndex;
                 const patentHeight = (trend.patents / maxPatents) * 100;
                 const researchHeight = (trend.research / maxResearch) * 100;
 
@@ -342,10 +536,10 @@ export default function PatentTrendsPage() {
                   Patent Velocity by Mineral Domain
                 </h3>
                 <p style={{ fontSize: '12px', color: 'var(--color-graphite)', marginTop: '2px' }}>
-                  Breakdown of 1,250 annual filings across strategic sectors
+                  Breakdown of {usingLive ? livePatentCount.toLocaleString() : '1,250'} annual filings across strategic sectors
                 </p>
               </div>
-              <span className="badge badge-indigo">2026 Projection</span>
+              <span className="badge badge-indigo">{usingLive ? `${annualTrends[annualTrends.length - 1].year} Corpus` : '2026 Projection'}</span>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
@@ -411,7 +605,7 @@ export default function PatentTrendsPage() {
                   Jurisdictional origin of intellectual property filings
                 </p>
               </div>
-              <span className="badge badge-emerald">82% Domestic Ratio</span>
+              <span className="badge badge-emerald">{usingLive ? 'Live Corpus' : '82% Domestic Ratio'}</span>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
@@ -501,7 +695,7 @@ export default function PatentTrendsPage() {
                 </tr>
               </thead>
               <tbody>
-                {LEADING_ORGANISATIONS.map((org, idx) => (
+                {leaderboardOrgs.map((org, idx) => (
                   <tr
                     key={org.id}
                     style={{
@@ -534,7 +728,7 @@ export default function PatentTrendsPage() {
 
                     <td style={{ padding: '14px 16px' }}>
                       <span className="badge badge-emerald" style={{ fontSize: '11px' }}>
-                        {org.citationImpact} / 5.0
+                        {org.citationImpact != null ? `${org.citationImpact} / 5.0` : '—'}
                       </span>
                     </td>
 
