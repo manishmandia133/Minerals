@@ -329,7 +329,7 @@ export default function EcosystemPage() {
             >
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: 500 }}>
                 <Sparkles style={{ width: '13px', height: '13px' }} />
-                Ask Mineralis AI
+                Ask Minerals AI
               </span>
             </StarBorder>
             <Link to="/trends" className="btn-pill btn-pill-ghost" style={{ color: 'var(--color-paper-white)', fontSize: '12px' }}>

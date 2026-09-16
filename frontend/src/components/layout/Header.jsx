@@ -67,7 +67,7 @@ export default function Header() {
       <header style={headerStyle}>
         {/* Wordmark — left */}
         <Link to="/" style={wordmarkStyle}>
-          <span>MINERALIS</span>
+          <span>MINERALS</span>
           <span
             style={{
               fontSize: '10px',

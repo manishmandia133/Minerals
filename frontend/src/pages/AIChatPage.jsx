@@ -38,7 +38,7 @@ export default function AIChatPage() {
 
   const initialGreeting = {
     role: 'assistant',
-    text: `Hello! I am the **Mineralis AI Patent Intelligence Assistant**, trained on the Indian Patent Office (IPO) repository, OpenAlex scientific literature, and India's 30 Notified Critical Minerals.\n\nYou can ask me about:\n- Specific Indian patents and utility applications (e.g. *IN 202411048912 A*)\n- Extraction & refining technologies for Lithium, Rare Earths, Cobalt, and Graphite\n- TRL acceleration gaps and laboratory-to-pilot benchmarks\n- Institutional filings by CSIR-NML, IIT Bombay, BARC, and Tata Steel\n\nHow can I assist your patent intelligence research today?`,
+    text: `Hello! I am the **Minerals AI Patent Intelligence Assistant**, trained on the Indian Patent Office (IPO) repository, OpenAlex scientific literature, and India's 30 Notified Critical Minerals.\n\nYou can ask me about:\n- Specific Indian patents and utility applications (e.g. *IN 202411048912 A*)\n- Extraction & refining technologies for Lithium, Rare Earths, Cobalt, and Graphite\n- TRL acceleration gaps and laboratory-to-pilot benchmarks\n- Institutional filings by CSIR-NML, IIT Bombay, BARC, and Tata Steel\n\nHow can I assist your patent intelligence research today?`,
     citations: [],
     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
   };
@@ -264,7 +264,7 @@ export default function AIChatPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `Mineralis_AI_Patent_Chat_${new Date().toISOString().slice(0, 10)}.txt`;
+    link.download = `Minerals_AI_Patent_Chat_${new Date().toISOString().slice(0, 10)}.txt`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -277,7 +277,7 @@ export default function AIChatPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
             <span className="badge badge-indigo">
               <Sparkles style={{ width: '12px', height: '12px' }} />
-              Mineralis Patent Intelligence Engine
+              Minerals Patent Intelligence Engine
             </span>
             <span className="badge badge-emerald">IPO + OpenAlex + 30 Minerals</span>
             <span className="badge badge-indigo">
@@ -415,7 +415,7 @@ export default function AIChatPage() {
                       </>
                     ) : (
                       <>
-                        <span style={{ fontWeight: 500, color: 'var(--color-electric-indigo)' }}>Mineralis AI</span>
+                        <span style={{ fontWeight: 500, color: 'var(--color-electric-indigo)' }}>Minerals AI</span>
                         <span>•</span>
                         <span>{msg.timestamp}</span>
                       </>

@@ -2,9 +2,9 @@ import React from "react";
 import { FlutedGlass } from "@paper-design/shaders-react";
 import { Link } from "react-router-dom";
 
-const companyName = "MINERALIS";
+const companyName = "MINERALS";
 
-const MineralisLogo = ({ className }) => {
+const MineralsLogo = ({ className }) => {
   return (
     <svg className={className} width="64" height="38" viewBox="0 0 64 38" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M0 20.1032L39.8387 20.1032C44.7808 20.1032 48.7871 24.1095 48.7871 29.0516C48.7871 33.9937 44.7808 38 39.8387 38L1.56459e-06 38L0 20.1032Z" fill="currentColor" />
@@ -93,7 +93,7 @@ export default function FooterSection5({ theme = "blue" }) {
           <div className="flex flex-col justify-between max-w-sm w-full">
             <div className="flex flex-col">
               {/* Logo SVG */}
-              <MineralisLogo className={`${isWhite ? "text-[var(--color-ink)]" : "text-[#F0F1FA]"} w-9 h-auto shrink-0 mb-2`} />
+              <MineralsLogo className={`${isWhite ? "text-[var(--color-ink)]" : "text-[#F0F1FA]"} w-9 h-auto shrink-0 mb-2`} />
               <h2 className={`${isWhite ? "text-[var(--color-ink)]" : "text-[#F0F1FA]"} text-xl md:text-[22px] font-medium leading-tight`}>
                 Smart Technology &amp; Patent Tracker<br />for Critical Minerals
               </h2>

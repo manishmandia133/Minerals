@@ -1,4 +1,4 @@
-// Help / Support Center — guides, FAQs and troubleshooting for Mineralis.
+// Help / Support Center — guides, FAQs and troubleshooting for Minerals.
 // Matches Lusion light-theme: lavender mist canvas, Aeonik, badge + card primitives.
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -50,7 +50,7 @@ const GUIDES = [
   },
   {
     icon: Sparkles,
-    title: 'Ask Mineralis AI',
+    title: 'Ask Minerals AI',
     desc: 'Ask plain-language questions — e.g. “Which orgs lead lithium recycling?”',
     to: '/chat',
     cta: 'Open AI Chat',
@@ -60,8 +60,8 @@ const GUIDES = [
 const FAQS = [
   {
     group: 'Getting started',
-    q: 'What is Mineralis?',
-    a: 'Mineralis is a Smart Technology & Patent Tracker for critical minerals. It brings together Indian Patent Office (IPO InPASS) records, OpenAlex research papers, trend analytics and an AI assistant so you can see who is innovating, what is maturing, and where India still depends on imports.',
+    q: 'What is Minerals?',
+    a: 'Minerals is a Smart Technology & Patent Tracker for critical minerals. It brings together Indian Patent Office (IPO InPASS) records, OpenAlex research papers, trend analytics and an AI assistant so you can see who is innovating, what is maturing, and where India still depends on imports.',
   },
   {
     group: 'Getting started',
@@ -76,7 +76,7 @@ const FAQS = [
   {
     group: 'Patents',
     q: 'What do TRL levels mean?',
-    a: 'Technology Readiness Level runs 1–9: 1–3 is lab research, 4–6 is pilot validation, 7–9 is deployment-ready. Mineralis shows an estimated India TRL per record so you can separate bench chemistry from scalable processes.',
+    a: 'Technology Readiness Level runs 1–9: 1–3 is lab research, 4–6 is pilot validation, 7–9 is deployment-ready. Minerals shows an estimated India TRL per record so you can separate bench chemistry from scalable processes.',
   },
   {
     group: 'Research',
@@ -110,8 +110,8 @@ const FAQS = [
   },
   {
     group: 'Data & terms',
-    q: 'Can I reuse Mineralis data in a report or publication?',
-    a: 'Summaries and charts may be reused with attribution to Mineralis and the underlying source (IPO InPASS / OpenAlex). Reproducing full patent specifications should follow the original publisher terms — see the Terms page for details.',
+    q: 'Can I reuse Minerals data in a report or publication?',
+    a: 'Summaries and charts may be reused with attribution to Minerals and the underlying source (IPO InPASS / OpenAlex). Reproducing full patent specifications should follow the original publisher terms — see the Terms page for details.',
   },
   {
     group: 'Data & terms',
@@ -148,7 +148,7 @@ export default function HelpPage() {
           </div>
           <h1 style={{ fontSize: '42px', fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.15, color: INK }}>
             <SplitText
-              text="Help & how to use Mineralis"
+              text="Help & how to use Minerals"
               tag="span"
               splitType="words"
               textAlign="left"
@@ -265,7 +265,7 @@ export default function HelpPage() {
                 <span>Fastest way to an answer</span>
               </div>
               <div style={{ fontSize: '19px', fontWeight: 500, color: 'var(--color-paper-white)', lineHeight: 1.3, marginBottom: '8px' }}>
-                Ask Mineralis AI in plain language.
+                Ask Minerals AI in plain language.
               </div>
               <p style={{ fontSize: '13px', color: 'rgba(240,241,250,0.75)', lineHeight: 1.6, marginBottom: '16px' }}>
                 It searches the same patents, papers and ecosystem data — with sources attached.
@@ -303,9 +303,9 @@ export default function HelpPage() {
               <p style={{ fontSize: '13px', color: GRAPHITE, lineHeight: 1.6, marginBottom: '12px' }}>
                 Include the page URL, filters applied and — for data issues — the patent or paper ID.
               </p>
-              <a href="mailto:support@mineralis.example" className="btn-pill btn-pill-outline" style={{ fontSize: '12px', justifyContent: 'center', width: '100%' }}>
+              <a href="mailto:support@minerals.example" className="btn-pill btn-pill-outline" style={{ fontSize: '12px', justifyContent: 'center', width: '100%' }}>
                 <LifeBuoy style={{ width: '13px', height: '13px' }} />
-                <span>support@mineralis.example</span>
+                <span>support@minerals.example</span>
               </a>
             </div>
           </div>

@@ -1,4 +1,4 @@
-// Terms of Use — plain-language legal page for Mineralis.
+// Terms of Use — plain-language legal page for Minerals.
 // Matches Lusion light-theme: lavender mist canvas, Aeonik, badge + card primitives.
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -85,7 +85,7 @@ export default function TermsPage() {
             />
           </h1>
           <p style={{ color: GRAPHITE, fontSize: '15px', marginTop: '8px', maxWidth: '720px' }}>
-            The plain-language rules for using Mineralis — a Smart Technology &amp; Patent
+            The plain-language rules for using Minerals — a Smart Technology &amp; Patent
             Tracker for critical minerals. If you use the platform, these terms apply.
           </p>
         </div>
@@ -94,7 +94,7 @@ export default function TermsPage() {
         <div className="reveal-init" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginBottom: '24px' }}>
           {[
             { icon: Database, t: 'Data is informational', d: 'Verify high-stakes decisions against the original IPO / OpenAlex record.' },
-            { icon: ShieldCheck, t: 'Attribute reuse', d: 'Summaries & charts may be reused with credit to Mineralis + source.' },
+            { icon: ShieldCheck, t: 'Attribute reuse', d: 'Summaries & charts may be reused with credit to Minerals + source.' },
             { icon: CircleAlert, t: 'No confidential inputs', d: 'Never paste personal, secret or export-controlled data into chat.' },
           ].map(({ icon: Icon, t, d }) => (
             <div key={t} className="card card-interactive" style={{ padding: '18px 20px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
@@ -143,7 +143,7 @@ export default function TermsPage() {
             <div className="card" style={{ padding: '32px' }}>
               <section style={{ marginBottom: '28px' }}>
                 <H2 id="acceptance">1 · Acceptance of these terms</H2>
-                <P>By accessing Mineralis (“the platform”, “we”, “us”) you agree to these Terms of Use. If you use the platform on behalf of an organisation, you confirm you are authorised to accept on its behalf. If you do not agree, please do not use the platform.</P>
+                <P>By accessing Minerals (“the platform”, “we”, “us”) you agree to these Terms of Use. If you use the platform on behalf of an organisation, you confirm you are authorised to accept on its behalf. If you do not agree, please do not use the platform.</P>
                 <P>You must be legally able to enter contracts in your jurisdiction, and you are responsible for complying with local laws on patents, export controls and data protection.</P>
               </section>
 
@@ -151,7 +151,7 @@ export default function TermsPage() {
 
               <section style={{ marginBottom: '28px' }}>
                 <H2 id="service">2 · What the service provides</H2>
-                <P>Mineralis aggregates and visualises public technology intelligence: patent search, research exploration, filing-trend analytics, ecosystem dossiers and an AI chat assistant. Features may change as we improve coverage and add minerals.</P>
+                <P>Minerals aggregates and visualises public technology intelligence: patent search, research exploration, filing-trend analytics, ecosystem dossiers and an AI chat assistant. Features may change as we improve coverage and add minerals.</P>
                 <ul style={{ listStyle: 'none', padding: 0 }}>
                   <Li>Patent Explorer — searchable IPO records with IPC codes, TRL estimates and legal status.</Li>
                   <Li>Research Explorer — OpenAlex-indexed papers with citation and institutional analytics.</Li>
@@ -190,9 +190,9 @@ export default function TermsPage() {
 
               <section style={{ marginBottom: '28px' }}>
                 <H2 id="ip">5 · Intellectual property &amp; reuse</H2>
-                <P>The Mineralis interface, visualisations and computed analytics are our work product. Underlying patent texts and paper metadata remain the property of their publishers and applicants.</P>
+                <P>The Minerals interface, visualisations and computed analytics are our work product. Underlying patent texts and paper metadata remain the property of their publishers and applicants.</P>
                 <ul style={{ listStyle: 'none', padding: 0 }}>
-                  <Li>You may reuse summaries, charts and AI answers with attribution: “Source: Mineralis, via IPO InPASS / OpenAlex”.</Li>
+                  <Li>You may reuse summaries, charts and AI answers with attribution: “Source: Minerals, via IPO InPASS / OpenAlex”.</Li>
                   <Li>Reproducing full patent specifications or paper PDFs is governed by the original publisher&apos;s terms.</Li>
                   <Li>Feedback you send (bug reports, corrections) may be used to improve the platform without compensation.</Li>
                 </ul>
@@ -237,7 +237,7 @@ export default function TermsPage() {
                   <span>
                     <span style={{ display: 'block', fontSize: '13.5px', fontWeight: 600, color: INK }}>Questions about these terms?</span>
                     <span style={{ display: 'block', fontSize: '13px', color: GRAPHITE, marginTop: '2px' }}>
-                      Email <a href="mailto:legal@mineralis.example" style={{ color: INDIGO, fontWeight: 600 }}>legal@mineralis.example</a> — include the section number you&apos;re asking about.
+                      Email <a href="mailto:legal@minerals.example" style={{ color: INDIGO, fontWeight: 600 }}>legal@minerals.example</a> — include the section number you&apos;re asking about.
                     </span>
                   </span>
                 </div>
