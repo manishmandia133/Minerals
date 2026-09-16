@@ -5,7 +5,7 @@ import ingestionRouter from "./routes/ingestion.routes.js";
 
 const app = express();
 
-app.use(express.json());
+app.use(express.json({ limit: "5mb" }));
 
 app.use("/api/v1/query", queryRouter);
 app.use("/api/v1/ingestion", ingestionRouter);
