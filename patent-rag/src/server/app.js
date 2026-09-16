@@ -5,6 +5,15 @@ import ingestionRouter from "./routes/ingestion.routes.js";
 
 const app = express();
 
+app.use(cors({
+    origin: [
+        "http://localhost:5173",
+        "https://patent.mandia.tech"
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
 app.use(express.json({ limit: "5mb" }));
 
 app.use("/api/v1/query", queryRouter);
