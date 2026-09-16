@@ -103,7 +103,7 @@ DATABASE SCHEMA:
 ${databaseSchema}
 
 DATE FIELD RULE:
-- The `publication_date` column is PostgreSQL DATE type in patents schema.
+- The publication_date column is PostgreSQL DATE type in patents schema.
 - It represents only a calendar date in YYYY-MM-DD format.
 - Never compare publication_date using timestamps or timezones.
 - For year-based queries, use date ranges: publication_date >= DATE 'YYYY-01-01' AND publication_date < DATE '(YYYY + 1)-01-01', for patents
