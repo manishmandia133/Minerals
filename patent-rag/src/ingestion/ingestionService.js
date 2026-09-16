@@ -3,6 +3,7 @@ import { validateData } from "./research/validateData.js";
 import { createDocument } from "./research/createDocument.js";
 import { saveDocument } from "./research/saveDocument.js";
 
+import { cleanPatentData } from "./patents/cleanPatentData.js";
 import { validatePatent } from "./patents/validatePatent.js";
 import { createPatent } from "./patents/createPatent.js";
 import { savePatent } from "./patents/savePatent.js";
@@ -58,9 +59,11 @@ export async function ingestPatents(patents) {
     for (let i = 0; i < patents.length; i++) {
 
         try {
+            const cleanedPatent =
+                await cleanPatentData(patents[i]);
 
             const validatedPatent =
-                validatePatent(patents[i]);
+                validatePatent(cleanedPatent);
 
             const patentWithEmbedding =
                 await createPatent(validatedPatent);
