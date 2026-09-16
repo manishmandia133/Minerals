@@ -25,7 +25,7 @@ export async function fetchResearch({ research, india_only, since }) {
 
 export async function getRecords() {
     const response = await fetch(
-        `${RESEARCH_API_URL}/records?limit=40&sort=newest`
+        `${RESEARCH_API_URL}/records?limit=500&sort=newest`
     );
 
     if (!response.ok) {
@@ -45,6 +45,60 @@ export async function recordsUploaded(documents) {
             },
             body: JSON.stringify({
                 documents
+            })
+        }
+    );
+
+    if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`RAG API error: ${response.status} - ${error}`);
+    }
+
+    return await response.json();
+}
+
+export async function fetchPatent({ patents, india_only, patent_pages }) {
+    const response = await fetch(`${RESEARCH_API_URL}/fetch`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            patents,
+            india_only,
+            patent_pages
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error(`RESEARCH API error: ${response.status}`);
+    }
+
+    return await response.json();
+}
+
+export async function getPatent() {
+    const response = await fetch(
+        `${RESEARCH_API_URL}/records?limit=500&sort=newest`
+    );
+
+    if (!response.ok) {
+        throw new Error(`Mineral Intel API error: ${response.status}`);
+    }
+
+    return await response.json();
+}
+
+export async function patentsUploaded(patents) {
+    const response = await fetch(
+        `${RAG_API_URL}/api/v1/ingestion/patents`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                patents
             })
         }
     );

@@ -9,7 +9,7 @@ import {
 	getResearchesByMineral,
 	getResearchesByYear,
 } from '../controllers/researchController.js';
-import { researchFetch } from '../controllers/apiFetch.controller.js';
+import { researchFetch, patentFetch } from '../controllers/apiFetch.controller.js';
 
 const router = Router();
 
@@ -20,5 +20,6 @@ router.get('/researches', getAllResearches);
 router.get('/researches/mineral/:mineral', getResearchesByMineral);
 router.get('/researches/year/:year', getResearchesByYear);
 router.post('/researches/fetch', researchFetch);
+router.post('/patents/fetch', patentFetch);
 
 export default router;
