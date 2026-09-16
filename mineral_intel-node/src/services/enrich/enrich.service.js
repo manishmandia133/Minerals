@@ -37,9 +37,11 @@ async function openAlexFetch(url) {
 }
 
 async function enrichRecord(rec) {
-  // A real abstract needs no work; a snippet-seeded one still deserves an
-  // upgrade attempt from the source page (updateRecord keeps the longer text).
-  if (rec.abstract && !rec.snippet) return false;
+  // A complete record needs no work; anything thin (missing abstract or
+  // missing authors/org) deserves an upgrade attempt from the source link.
+  // updateRecord() fills empty slots and keeps the longer abstract.
+  const thinAuthors = !(rec.applicants_or_authors || []).length && !rec.organisation;
+  if (rec.abstract && !rec.snippet && !thinAuthors) return false;
   try {
     if (rec.doi) {
       const patch = await openAlexPatch(rec.doi);
@@ -53,16 +55,14 @@ async function enrichRecord(rec) {
     }
     if (rec.source_url && /^https?:\/\/patents\.google\.com\//.test(rec.source_url)) {
       const s = await scrapePage(rec.source_url);
-      if (s.abstract && s.abstract.length > 40) {
-        return store.updateRecord(rec.id, {
-          abstract: s.abstract,
-          full_text: s.full_text,
-          applicants_or_authors: s.authors,
-          organisation: s.organisation,
-          journal: s.journal,
-          publication_date: s.published_date,
-        });
-      }
+      const patch = {};
+      if (s.abstract && s.abstract.length > 40) patch.abstract = s.abstract;
+      if (s.full_text) patch.full_text = s.full_text;
+      if ((s.authors || []).length) patch.applicants_or_authors = s.authors;
+      if (s.organisation) patch.organisation = s.organisation;
+      if (s.journal) patch.journal = s.journal;
+      if (s.published_date) patch.publication_date = s.published_date;
+      if (Object.keys(patch).length) return store.updateRecord(rec.id, patch);
     }
   } catch { /* skip */ }
   return false;

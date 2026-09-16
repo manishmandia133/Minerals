@@ -23,7 +23,8 @@ src/
     pipeline.service.js    # fetchAndSave: fetch -> saveRecords -> enrichIds (shared by /fetch + auto.js)
     store.service.js       # file store: clean, dedupe, prune
     fetch/
-      patents.service.js   # Google Patents fetcher (patents)
+      patents.service.js   # Google Patents fetcher (patents, primary)
+      lens.service.js      # Lens.org fetcher (patents fallback, needs LENS_API_KEY)
       research.service.js  # OpenAlex fetcher (research)
     enrich/
       enrich.service.js    # fill missing abstracts
@@ -64,6 +65,7 @@ sequenceDiagram
     PL->>O: works(search, 100/query, IN filter)
     P-->>PL: title + number + date (no abstract!)
     O-->>PL: title + DOI + authors (abstract = null)
+    PL->>PL: Google 503? retry via Lens.org (IN filter)
     PL->>ST: saveRecords() — clean, skip stubs, dedupe
     PL->>O: re-fetch each DOI for abstract_inverted_index
     PL->>ST: updateRecord() — fill empty slots only
@@ -77,7 +79,8 @@ Any source failure degrades to a `[pending]` stub (`{ title: "[pending] <query>"
 
 | Fetcher | Key | Volume | Notes |
 |---|---|---|---|
-| `patents(query, pages=2, {since, until, latest})` | none | ~200/query | Google Patents XHR, `country=IN`, `num=100`/page. No abstract — the search `snippet` is stored separately and seeds a provisional abstract until enrichment upgrades it from the real page. A failed page keeps earlier pages; stub only if nothing arrived. `latest` adds `sort=new` + sorts newest-first; `since/until` filter client-side. |
+| `patents(query, pages=2, {since, until, latest})` | none | ~200/query | Google Patents XHR, `country=IN`, `num=100`/page. No abstract — the search `snippet` is stored separately and seeds a provisional abstract until enrichment upgrades it from the real page. A failed page keeps earlier pages; stub only if nothing arrived. `latest` adds `sort=new` + sorts newest-first; `since/until` filter client-side. When Google throttles (HTTP 503), the pipeline falls back to Lens automatically. |
+| `lensPatents(query, pages=2, {since, until, latest})` | `LENS_API_KEY` | ~200/query | Lens.org patent search, `jurisdiction=IN`, title-or-abstract match, server-side date range. Ships real abstracts when Lens has them; `source_url` points at the Google Patents page so enrichment can still upgrade IN records that lack abstracts. |
 | `openalex(query, {perPage=100, indiaOnly, mailto, since, until, latest})` | none | 100/query | `filter=institutions.country_code:IN` when `indiaOnly`. Abstract is `null` here — rebuilt per-DOI during enrichment. `since/until` go server-side (`from/to_publication_date`) plus a client-side check. |
 
 ### 2. Clean + store — `services/store.service.js`
@@ -158,7 +161,7 @@ Empty → `400`. Success → `200 { ok, received, inserted, duplicates, merged, 
 
 ## Config, tests
 
-Env (plain exports, all read in `src/config.js`): `PORT` (8000) · `RECORDS_DIR` · `QUERIES` · `INTERVAL_MIN` (360) · `SINCE` / `SINCE_DAYS` / `UNTIL` / `LATEST` · `OPENALEX_MAILTO`.
+Env (plain exports, all read in `src/config.js`): `PORT` (8000) · `RECORDS_DIR` · `QUERIES` · `INTERVAL_MIN` (360) · `SINCE` / `SINCE_DAYS` / `UNTIL` / `LATEST` · `OPENALEX_MAILTO` · `LENS_API_KEY` (Lens.org patent fallback; without it Google outages yield `[pending]` stubs only).
 
 `npm test` — 3 offline tests (temp `RECORDS_DIR`, ephemeral ports): record round trip with dedupe, empty/unknown-source `400`, and `since` + `sort=newest` filtering.
 

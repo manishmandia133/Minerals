@@ -87,6 +87,71 @@ test('patents() parses current Google shape: cluster[].result[] with patent{}', 
   } finally { global.fetch = realFetch; }
 });
 
+test('lensPatents() parses Lens shape with IN + date filter', async () => {
+  const { lensPatents } = require('../src/services/fetch/lens.service');
+  const realFetch = global.fetch;
+  const oldKey = process.env.LENS_API_KEY;
+  process.env.LENS_API_KEY = 'test-key';
+  let lastBody = null;
+  global.fetch = async (url, opts) => {
+    lastBody = JSON.parse(opts.body);
+    return { ok: true, json: async () => ({ total: 2, data: [
+      { lens_id: '044-292-648-719-514', jurisdiction: 'IN', doc_number: '202431039149', kind: 'A',
+        date_published: '2024-05-31',
+        abstract: [{ text: 'A sufficiently long abstract about lithium ion battery monitoring and hazard prevention methods here yes indeed.', lang: 'en' }],
+        biblio: { invention_title: [{ text: 'Online health monitoring in lithium-ion battery', lang: 'en' }],
+          parties: { applicants: [{ extracted_name: { value: 'IIT Delhi' } }],
+            inventors: [{ extracted_name: { value: 'Jane Doe' } }] } } },
+      { lens_id: 'short-1', jurisdiction: 'IN', doc_number: '202400002', kind: 'A',
+        date_published: '2023-01-01', biblio: { invention_title: [{ text: 'Old cell', lang: 'en' }] } },
+    ] }) };
+  };
+  try {
+    const recs = await lensPatents('lithium battery', 1, { since: '2024-01-01' });
+    assert.equal(recs.length, 1, '2023 record filtered by since');
+    assert.equal(recs[0].kind, 'patent');
+    assert.equal(recs[0].source, 'lens_patent');
+    assert.equal(recs[0].publication_number, 'IN202431039149A');
+    assert.equal(recs[0].organisation, 'IIT Delhi');
+    assert.ok((recs[0].abstract || '').includes('lithium'));
+    assert.ok(recs[0].source_url.includes('IN202431039149A'), 'enrichable Google page URL');
+    const f = lastBody.query.bool.filter;
+    assert.ok(f.some((x) => x.term && x.term.jurisdiction === 'IN'), 'IN filter sent server-side');
+    assert.ok(f.some((x) => x.range && x.range.date_published.gte === '2024-01-01'), 'since sent server-side');
+  } finally { global.fetch = realFetch; process.env.LENS_API_KEY = oldKey; }
+});
+
+test('pipeline falls back to Lens when Google 503s', async () => {
+  const { fetchAndSave } = require('../src/services/pipeline.service');
+  const realFetch = global.fetch;
+  const oldKey = process.env.LENS_API_KEY;
+  process.env.LENS_API_KEY = 'test-key';
+  global.fetch = async (url, opts) => {
+    if (String(url).includes('patents.google.com/xhr')) {
+      return { ok: false, status: 503, text: async () => 'Sorry...' };
+    }
+    if (String(url).includes('api.lens.org')) {
+      return { ok: true, json: async () => ({ total: 1, data: [
+        { lens_id: '044-292-648-719-514', jurisdiction: 'IN', doc_number: '202431039149', kind: 'A',
+          date_published: '2024-05-31',
+          abstract: [{ text: 'A sufficiently long abstract about lithium ion battery monitoring methods here yes indeed.', lang: 'en' }],
+          biblio: { invention_title: [{ text: 'Online health monitoring in lithium-ion battery', lang: 'en' }],
+            parties: { applicants: [{ extracted_name: { value: 'IIT Delhi' } }] } } },
+      ] }) };
+    }
+    return realFetch(url, opts);
+  };
+  try {
+    const s = await fetchAndSave({ patentsQuery: 'lithium battery', pages: 1, dateOpts: {} });
+    assert.equal(s.inserted, 1);
+    const rec = require('../src/services/store.service').load()
+      .find((r) => r.publication_number === 'IN202431039149A');
+    assert.ok(rec, 'Lens fallback hit must be stored');
+    assert.equal(rec.source, 'lens_patent');
+    assert.equal(rec.kind, 'patent');
+  } finally { global.fetch = realFetch; process.env.LENS_API_KEY = oldKey; }
+});
+
 test('POST /fetch { patents } stores Google-shaped hits as files', async () => {
   const realFetch = global.fetch;
   // Stub only the Google XHR host; everything else (localhost) passes through.

@@ -5,9 +5,9 @@
   "type": "commonjs",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js",
+    "start": "node --env-file=.env src/index.js",
     "test": "node --test test/api.test.js",
-    "auto": "node src/jobs/auto.js --once"
+    "auto": "node --env-file=.env src/jobs/auto.js --once"
   },
   "dependencies": {
     "express": "^4.19.2"
