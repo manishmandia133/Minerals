@@ -36,7 +36,7 @@ export async function researchFetch(req, res) {
 
     const documents = recordsWithAbstract.map(record => ({
         raw_data: Object.entries(record)
-            .slice(0, 1)
+            .slice(0, 15)
             .map(([key, value]) => {
                 return `${key}: ${value === null || value === undefined
                     ? "null"
