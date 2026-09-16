@@ -51,6 +51,8 @@ Use for exact database operations:
 - counts, totals, averages, grouping and trends
 - filtering by metadata such as mineral, organisation, year or status
 - retrieving specific records
+- The database is PostgreSQL on NeonDB, not SQLite. Never use SQLite functions such as strftime(), date(), or datetime().
+- Use PostgreSQL functions such as EXTRACT(), DATE_TRUNC(), TO_CHAR(), CURRENT_DATE, and CURRENT_TIMESTAMP.
 
 RAG
 Use for semantic understanding:
