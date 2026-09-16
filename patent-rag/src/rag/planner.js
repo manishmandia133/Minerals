@@ -51,6 +51,8 @@ Use for exact database operations:
 - counts, totals, averages, grouping and trends
 - filtering by metadata such as mineral, organisation, year or status
 - retrieving specific records
+- The database is PostgreSQL on NeonDB, not SQLite. Never use SQLite functions such as strftime(), date(), or datetime().
+- Use PostgreSQL functions such as EXTRACT(), DATE_TRUNC(), TO_CHAR(), CURRENT_DATE, and CURRENT_TIMESTAMP.
 
 RAG
 Use for semantic understanding:
@@ -100,6 +102,12 @@ DATABASE SCHEMA:
 
 ${databaseSchema}
 
+DATE FIELD RULE:
+- The publication_date column is PostgreSQL DATE type in patents schema.
+- It represents only a calendar date in YYYY-MM-DD format.
+- Never compare publication_date using timestamps or timezones.
+- For year-based queries, use date ranges: publication_date >= DATE 'YYYY-01-01' AND publication_date < DATE '(YYYY + 1)-01-01', for patents
+- For an exact date, compare using: publication_date = DATE 'YYYY-MM-DD', for patents
 
 OUTPUT:
 

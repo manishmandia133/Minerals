@@ -1,4 +1,6 @@
 import express from "express";
+import cors from "cors";
+
 import { errorHandler } from "./middleware/error.middleware.js";
 import queryRouter from "./routes/query.routes.js";
 import ingestionRouter from "./routes/ingestion.routes.js";

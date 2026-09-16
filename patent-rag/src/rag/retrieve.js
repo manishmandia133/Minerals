@@ -1,17 +1,16 @@
 import { pool } from "../db/db.js";
 
 export async function retrieveDocuments(embedding) {
-
     const result = await pool.query(
         `
         SELECT
-            id,
-            'research' AS document_type,
-            title,
-            abstract,
-            organisation,
-            mineral,
-            technology_area,
+            id::TEXT AS id,
+            'research'::TEXT AS document_type,
+            title::TEXT,
+            abstract::TEXT,
+            organisation::TEXT,
+            mineral::TEXT,
+            technology_area::TEXT,
             1 - (embedding <=> $1::vector) AS similarity
         FROM research_documents
         WHERE embedding IS NOT NULL
@@ -19,13 +18,13 @@ export async function retrieveDocuments(embedding) {
         UNION ALL
 
         SELECT
-            id,
-            'patent' AS document_type,
-            title,
-            abstract,
-            organisation,
-            mineral,
-            technology_area,
+            id::TEXT AS id,
+            'patent'::TEXT AS document_type,
+            title::TEXT,
+            abstract::TEXT,
+            organisation::TEXT,
+            mineral::TEXT,
+            technology_area::TEXT,
             1 - (embedding <=> $1::vector) AS similarity
         FROM patents
         WHERE embedding IS NOT NULL
