@@ -48,7 +48,7 @@ test('fetch with no source returns 400 (lens and other sources removed)', async 
 });
 
 test('patents() parses current Google shape: cluster[].result[] with patent{}', async () => {
-  const { patents } = require('../src/services/patents.service');
+  const { patents } = require('../src/services/fetch/patents.service');
   const realFetch = global.fetch;
   // New Google XHR shape: result is an ARRAY of { id, patent: {...} }.
   // Plus one legacy cluster where result is a single object.
@@ -137,7 +137,7 @@ test('duplicate with better metadata merges instead of discarding', async () => 
 
 test('snippet-seeded abstract upgrades from the Google page', async () => {
   const store = require('../src/services/store.service');
-  const { enrichRecord } = require('../src/services/enrich.service');
+  const { enrichRecord } = require('../src/services/enrich/enrich.service');
   const realFetch = global.fetch;
   const seed = 'seed snippet text about lithium extraction that is long enough to count as provisional abstract here';
   const saved = store.saveRecords([{ title: 'Patent INUP001', publication_number: 'INUP001',
@@ -156,7 +156,7 @@ test('snippet-seeded abstract upgrades from the Google page', async () => {
 });
 
 test('scraper never reports the publisher as the organisation', async () => {
-  const { scrapePage } = require('../src/services/scrape.service');
+  const { scrapePage } = require('../src/services/enrich/scrape.service');
   const realFetch = global.fetch;
   global.fetch = async () => ({ ok: true, text: async () =>
     `<html><head><meta property="og:site_name" content="Elsevier">` +
@@ -178,7 +178,7 @@ test('scraper never reports the publisher as the organisation', async () => {
 
 test('enrichment falls back to the OpenAlex work ID when DOI is missing', async () => {
   const store = require('../src/services/store.service');
-  const { enrichRecord } = require('../src/services/enrich.service');
+  const { enrichRecord } = require('../src/services/enrich/enrich.service');
   const realFetch = global.fetch;
   store.saveRecords([{ title: 'DOI-less paper', source_url: 'https://openalex.org/W999999',
     doi: null, abstract: null }]);

@@ -6,8 +6,8 @@
 // publication_date, inventor, assignee, publication_number, ... } } — up to
 // `num` per page (requested 100; Google falls back to 10 if it ever ignores it).
 // Older shape (result = single flat object) is still accepted.
-const { getJson, pending } = require('../utils/http');
-const { resolveSince, resolveUntil, resolveLatest, inRange, newestFirst } = require('../utils/dates');
+const { getJson, pending } = require('../../utils/http');
+const { resolveRange, applyRange } = require('../../utils/dates');
 
 // Snippet HTML -> plain text seed for the abstract.
 const plain = (s) => String(s || '')
@@ -23,9 +23,8 @@ const pubNoFromId = (id) => {
 
 async function patents(query, pages = 2, opts = {}) {
   if (typeof pages === 'object' && pages !== null) { opts = pages; pages = 2; }
-  const since = resolveSince(opts);
-  const until = resolveUntil(opts);
-  const latest = resolveLatest(opts);
+  // since-only means "since -> today": until stays open (no future records exist).
+  const { since, until, latest } = resolveRange(opts);
   const out = [];
   for (let p = 0; p < Math.max(1, pages); p++) {
     try {
@@ -64,9 +63,7 @@ async function patents(query, pages = 2, opts = {}) {
       return pending('indian_patent', 'patent', query, String(e.message || e));
     }
   }
-  const filtered = (since || until) ? out.filter((r) => inRange(r.publication_date, since, until)) : out;
-  if (latest) filtered.sort(newestFirst);
-  return filtered;
+  return applyRange(out, since, until, latest);
 }
 
 module.exports = { patents };

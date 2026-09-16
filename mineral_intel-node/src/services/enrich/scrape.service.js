@@ -1,7 +1,7 @@
 'use strict';
 // Scrape a patents.google.com page (fetch + regex, no deps).
 // Returns what enrich.js needs: title, abstract, authors, org, journal, doi, date, full_text.
-const { HEADERS } = require('../utils/http');
+const { HEADERS } = require('../../utils/http');
 
 const tidy = (s, max = 0) => {
   const t = String(s || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();

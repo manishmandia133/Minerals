@@ -25,7 +25,11 @@ function getDateOpts() {
     since = new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
   }
   if (since && !/^\d{4}-\d{2}-\d{2}$/.test(since)) since = null;
-  let until = (process.env.UNTIL || '').slice(0, 10) || null;
+  const rawUntil = (process.env.UNTIL || '').trim();
+  // UNTIL=today|now|current|latest means "up to the current date".
+  let until = /^(today|now|current|latest|\*)$/i.test(rawUntil)
+    ? new Date().toISOString().slice(0, 10)
+    : rawUntil.slice(0, 10) || null;
   if (until && !/^\d{4}-\d{2}-\d{2}$/.test(until)) until = null;
   const latest = /^(1|true|yes|new|newest)$/i.test(process.env.LATEST || '');
   return { since, until, latest };

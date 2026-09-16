@@ -1,10 +1,10 @@
 'use strict';
 // Fill missing abstracts: DOI -> OpenAlex (work-ID fallback when no DOI),
 // else Google Patents page. Snippet-seeded abstracts are upgraded, not skipped.
-const store = require('./store.service');
+const store = require('../store.service');
 const { scrapePage } = require('./scrape.service');
-const { sleep } = require('../utils/http');
-const { ENRICH_SLEEP_MS, USER_AGENT } = require('../config');
+const { sleep } = require('../../utils/http');
+const { ENRICH_SLEEP_MS, USER_AGENT } = require('../../config');
 
 async function openAlexPatch(doi) {
   const clean = String(doi).replace(/^https?:\/\/(dx\.)?doi\.org\//, '').trim();

@@ -1,20 +1,19 @@
 'use strict';
 // OpenAlex research papers, no key. opts: { perPage, indiaOnly, mailto, since, until, latest }.
-const { getJson, pending } = require('../utils/http');
-const { resolveSince, resolveUntil, resolveLatest, inRange, newestFirst } = require('../utils/dates');
+const { getJson, pending } = require('../../utils/http');
+const { resolveRange, applyRange } = require('../../utils/dates');
 
 async function openalex(query, opts = {}) {
   const { perPage = 100, indiaOnly = false, mailto = process.env.OPENALEX_MAILTO } =
     typeof opts === 'number' ? { perPage: opts } : opts;
-  const since = resolveSince(opts);
-  const until = resolveUntil(opts);
-  const latest = resolveLatest(opts);
+  // since + (until || today): "specific date -> latest/current date".
+  const { since, until, latest, effectiveUntil } = resolveRange(opts);
   try {
     const params = { search: query, 'per-page': String(perPage) };
     const filters = [];
     if (indiaOnly) filters.push('institutions.country_code:IN');
     if (since) filters.push(`from_publication_date:${since}`);
-    if (until) filters.push(`to_publication_date:${until}`);
+    if (effectiveUntil) filters.push(`to_publication_date:${effectiveUntil}`);
     if (filters.length) params.filter = filters.join(',');
     if (mailto) params.mailto = mailto;
     if (latest) params.sort = 'publication_date:desc';
@@ -31,9 +30,7 @@ async function openalex(query, opts = {}) {
         source_url: w.doi || w.id || null,
       };
     });
-    const filtered = (since || until) ? recs.filter((r) => inRange(r.publication_date, since, until)) : recs;
-    if (latest) filtered.sort(newestFirst);
-    return filtered;
+    return applyRange(recs, since, until, latest);
   } catch (e) {
     return pending('openalex', 'research', query, String(e.message || e));
   }

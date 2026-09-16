@@ -20,11 +20,14 @@ src/
     http.js                # getJson, [pending] stub, sleep
     dates.js               # YYYY-MM-DD helpers, newest-first, stamp
   services/
-    patents.service.js     # Google Patents fetcher (patents)
-    research.service.js    # OpenAlex fetcher (research)
-    scrape.service.js      # patents.google.com page parser
+    pipeline.service.js    # fetchAndSave: fetch -> saveRecords -> enrichIds (shared by /fetch + auto.js)
     store.service.js       # file store: clean, dedupe, prune
-    enrich.service.js      # fill missing abstracts
+    fetch/
+      patents.service.js   # Google Patents fetcher (patents)
+      research.service.js  # OpenAlex fetcher (research)
+    enrich/
+      enrich.service.js    # fill missing abstracts
+      scrape.service.js    # patents.google.com page parser
   server/
     app.js                 # Express wiring
     routes/                # fetch.routes, records.routes
@@ -41,7 +44,7 @@ test/
 
 ```mermaid
 flowchart TB
-    A["Fetch\nGoogle Patents (IN)\nOpenAlex"] --> B["Clean + dedupe\nnormalize, skip stubs"]
+    A["pipeline.service.js\nfetchAndSave\nGoogle Patents (IN) + OpenAlex"] --> B["Clean + dedupe\nnormalize, skip stubs"]
     B --> C["Enrich\nDOI → OpenAlex\nelse scrape page"]
     C --> D["Prune\ndelete abstract-less"]
     D --> E[("data/records/\n<slug>-<id>.json")]
@@ -51,22 +54,24 @@ flowchart TB
 sequenceDiagram
     participant U as User / Cron
     participant S as POST /fetch<br/>or jobs/auto.js
+    participant PL as pipeline.service<br/>fetchAndSave
     participant P as Google Patents (IN)
     participant O as OpenAlex
     participant ST as data/records/
     U->>S: query (e.g. lithium extraction India)
-    S->>P: patents(query, 2 pages × ≤100)
-    S->>O: works(search, 100/query, IN filter)
-    P-->>S: title + number + date (no abstract!)
-    O-->>S: title + DOI + authors (abstract = null)
-    S->>ST: saveRecords() — clean, skip stubs, dedupe
-    S->>O: re-fetch each DOI for abstract_inverted_index
-    S->>ST: updateRecord() — fill empty slots only
-    S->>ST: scrape source_url as fallback
-    S->>ST: pruneUnenriched() — delete still-thin files
+    S->>PL: fetchAndSave({ patentsQuery, researchQuery })
+    PL->>P: patents(query, 2 pages × ≤100)
+    PL->>O: works(search, 100/query, IN filter)
+    P-->>PL: title + number + date (no abstract!)
+    O-->>PL: title + DOI + authors (abstract = null)
+    PL->>ST: saveRecords() — clean, skip stubs, dedupe
+    PL->>O: re-fetch each DOI for abstract_inverted_index
+    PL->>ST: updateRecord() — fill empty slots only
+    PL->>ST: scrape source_url as fallback
+    PL->>ST: pruneUnenriched() — delete still-thin files
 ```
 
-### 1. Fetch — `services/patents.service.js` + `research.service.js`
+### 1. Fetch — `services/fetch/patents.service.js` + `services/fetch/research.service.js` via `services/pipeline.service.js`
 
 Any source failure degrades to a `[pending]` stub (`{ title: "[pending] <query>", collector_note }`) that the store skips — outages become `received:1, inserted:0`, never crashes or junk files.
 
@@ -81,7 +86,7 @@ One file per record in `data/records/` (`RECORDS_DIR` overrides), named `<slug>-
 
 Dedupe key: `pub:<number>` → `doi:<doi>` → first 80 alnum chars of title. Titles <3 chars and `[pending]` stubs are skipped. Re-seeing a record **upserts**: empty slots fill and a longer `abstract` replaces a shorter one (`merged` count); unchanged re-posts count as `duplicates`.
 
-### 3. Enrich — `services/enrich.service.js` + `scrape.service.js`
+### 3. Enrich — `services/enrich/enrich.service.js` + `services/enrich/scrape.service.js`
 
 ```mermaid
 flowchart TD
