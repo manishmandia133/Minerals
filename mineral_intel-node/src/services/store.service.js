@@ -1,17 +1,22 @@
 'use strict';
-// Shared file store: data/records/<slug>-<id>.json (one file per record).
-// Used by both the API server (src/server.js) and the automation (auto.js).
+// File store: data/records/<slug>-<id>.json, one file per record.
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { getRecordsDir, MIN_ABSTRACT_LEN } = require('../config');
 
-const DIR = process.env.RECORDS_DIR || path.join(__dirname, '..', 'data', 'records');
+const DIR = getRecordsDir();
+const getDir = getRecordsDir;
 
 const clean = (r) => ({
   source: r.source || 'manual',
   kind: r.kind === 'research' ? 'research' : 'patent',
   title: String(r.title || 'Untitled').replace(/\s+/g, ' ').trim().slice(0, 1000),
   abstract: r.abstract ? String(r.abstract).replace(/\s+/g, ' ').trim().slice(0, 3000) : null,
+  // snippet = raw search-result excerpt (e.g. Google Patents). Provenance only:
+  // never treated as the abstract, but kept so records stay identifiable and
+  // enrichment can upgrade abstract from the source page later.
+  snippet: r.snippet ? String(r.snippet).replace(/\s+/g, ' ').trim().slice(0, 2000) : null,
   full_text: r.full_text ? String(r.full_text).replace(/\s+/g, ' ').trim().slice(0, 20000) : null,
   publication_number: r.publication_number ? String(r.publication_number).replace(/\s+/g, '').toUpperCase() : null,
   doi: r.doi ? String(r.doi).toLowerCase() : null,
@@ -28,19 +33,19 @@ const key = (r) => (r.publication_number && 'pub:' + r.publication_number)
   || (r.doi && 'doi:' + r.doi)
   || ('title:' + r.title.toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 80));
 
-// Filename from the record title: "<slug>-<id>.json". The id suffix keeps it unique.
+// Filename: <slug>-<id>.json (id keeps it unique).
 function slug(title) {
   const s = String(title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60).replace(/-+$/, '');
   return s || 'untitled';
 }
 
-// Each entry: { file, rec }
 function entries() {
-  fs.mkdirSync(DIR, { recursive: true });
+  const dir = getDir();
+  fs.mkdirSync(dir, { recursive: true });
   const out = [];
-  for (const f of fs.readdirSync(DIR)) {
+  for (const f of fs.readdirSync(dir)) {
     if (!f.endsWith('.json')) continue;
-    try { out.push({ file: path.join(DIR, f), rec: JSON.parse(fs.readFileSync(path.join(DIR, f), 'utf8')) }); } catch {}
+    try { out.push({ file: path.join(dir, f), rec: JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')) }); } catch { /* skip bad files */ }
   }
   return out;
 }
@@ -52,31 +57,36 @@ function load() {
 
 function saveRecords(recs) {
   const existing = load();
-  const seen = new Set(existing.map(key));
-  let inserted = 0, duplicates = 0;
+  const seen = new Map(existing.map((r) => [key(r), r.id]));
+  let inserted = 0, duplicates = 0, merged = 0;
   const ids = [];
   for (const r of recs) {
     const c = clean(r);
-    if (c.title.length < 3 || (r.collector_note && !c.abstract)) continue; // skip empty/failed fetches
-    if (seen.has(key(c))) { duplicates++; continue; }
-    seen.add(key(c));
+    if (c.title.length < 3 || (r.collector_note && !c.abstract)) continue;
+    const k = key(c);
+    if (seen.has(k)) {
+      // Same record seen before: merge anything improved, else count duplicate.
+      if (updateRecord(seen.get(k), c)) merged++; else duplicates++;
+      continue;
+    }
     const rec = { id: crypto.randomBytes(6).toString('hex'), ...c, created_at: new Date().toISOString() };
-    fs.writeFileSync(path.join(DIR, `${slug(rec.title)}-${rec.id}.json`), JSON.stringify(rec, null, 2));
+    fs.writeFileSync(path.join(getDir(), `${slug(rec.title)}-${rec.id}.json`), JSON.stringify(rec, null, 2));
+    seen.set(k, rec.id);
     ids.push(rec.id);
     inserted++;
   }
   const renamed = reconcileFilenames();
-  return { received: recs.length, inserted, duplicates, ids, renamed };
+  return { received: recs.length, inserted, duplicates, merged, ids, renamed };
 }
 
-// Rename any files that aren't "<slug>-<id>.json" for their content
-// (heals files written by older versions). Returns rename count.
+// Fix names that don't match their content.
 function reconcileFilenames() {
+  const dir = getDir();
   let renamed = 0;
   for (const e of entries()) {
     const want = `${slug(e.rec.title)}-${e.rec.id}.json`;
     if (path.basename(e.file) !== want) {
-      fs.writeFileSync(path.join(DIR, want), JSON.stringify(e.rec, null, 2));
+      fs.writeFileSync(path.join(dir, want), JSON.stringify(e.rec, null, 2));
       fs.unlinkSync(e.file);
       renamed++;
     }
@@ -84,30 +94,38 @@ function reconcileFilenames() {
   return renamed;
 }
 
-// Merge patch into the record with `id`, preserving good data.
-// Renames the file if the title changed. Returns true if found.
+// Merge patch into the record with `id`.
+//   - empty slots are filled (never clobbers good data);
+//   - `abstract` upgrades when the incoming one is longer (abstracts improve
+//     over time: snippet-seed -> scraped page -> authoritative source).
+// Renames the file if the title changed. Returns true only if something changed.
 function updateRecord(id, patch) {
   const e = entries().find((x) => x.rec.id === id);
   if (!e) return false;
   const rec = { ...e.rec };
+  let changed = false;
   for (const [k, v] of Object.entries(patch)) {
     if (v === null || v === undefined || v === '' || (Array.isArray(v) && !v.length)) continue;
     const cur = rec[k];
-    if (cur === null || cur === undefined || cur === '' || (Array.isArray(cur) && !cur.length)) rec[k] = v;
+    if (k === 'abstract') {
+      if (cur && String(cur).length >= String(v).length) continue;
+      rec[k] = v; changed = true; continue;
+    }
+    if (cur === null || cur === undefined || cur === '' || (Array.isArray(cur) && !cur.length)) { rec[k] = v; changed = true; }
   }
-  const want = path.join(DIR, `${slug(rec.title)}-${rec.id}.json`);
+  if (!changed) return false;
+  const want = path.join(getDir(), `${slug(rec.title)}-${rec.id}.json`);
   fs.writeFileSync(want, JSON.stringify(rec, null, 2));
   if (want !== e.file) fs.unlinkSync(e.file);
   return true;
 }
 
-// Delete records with no usable abstract (missing or too short).
-// Returns { removed, kept }.
-function pruneUnenriched(minLen = 40) {
+// Delete records with no usable abstract.
+function pruneUnenriched(minLen = MIN_ABSTRACT_LEN) {
   let removed = 0, kept = 0;
   for (const e of entries()) {
     const abs = (e.rec.abstract || '').trim();
-    if (!abs || abs.length < minLen || e.rec.title.startsWith('[pending]')) {
+    if (!abs || abs.length < minLen || String(e.rec.title || '').startsWith('[pending]')) {
       fs.unlinkSync(e.file);
       removed++;
     } else kept++;
@@ -115,4 +133,4 @@ function pruneUnenriched(minLen = 40) {
   return { removed, kept };
 }
 
-module.exports = { DIR, clean, key, slug, load, saveRecords, updateRecord, reconcileFilenames, pruneUnenriched };
+module.exports = { DIR, getDir, clean, key, slug, load, saveRecords, updateRecord, reconcileFilenames, pruneUnenriched };
