@@ -683,7 +683,6 @@ function RAGSourcesPanel({ ragData }) {
       style={{
         marginTop: '16px',
         paddingTop: '14px',
-        borderTop: '1px solid var(--color-haze)',
         display: 'flex',
         flexDirection: 'column',
         gap: '14px',
@@ -1354,7 +1353,7 @@ export default function AIChatPage() {
         </div>
 
         {/* Mineral scope strip */}
-        <div style={{ borderTop: '1px solid var(--color-haze)' }}>
+        <div>
           <div
             style={{
               maxWidth: '980px',
@@ -1634,7 +1633,6 @@ export default function AIChatPage() {
                         style={{
                           marginTop: '16px',
                           paddingTop: '12px',
-                          borderTop: '1px solid var(--color-haze)',
                         }}
                       >
                         <div style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--color-graphite)', marginBottom: '8px', fontWeight: 500 }}>
@@ -1805,11 +1803,9 @@ export default function AIChatPage() {
       <footer
         style={{
           flexShrink: 0,
-          background: 'rgba(255,255,255,0.9)',
+          background: '#F0F1FA',
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
-          borderTop: '1px solid var(--color-haze)',
-          boxShadow: '0 -8px 24px rgba(23,25,45,0.06)',
           zIndex: 10,
         }}
       >

@@ -1,10 +1,11 @@
 // Smart Technology & Patent Tracker for Critical Minerals
 // Multi-page React Application inspired by Lusion.co light-theme aesthetic
 
-import React, { Suspense, lazy, useEffect } from 'react';
+import React, { Suspense, lazy, useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import Header from './components/layout/Header';
 import FooterSection5 from './components/ui/footer-section-5';
+import ChatCurtainTransition from './components/common/ChatCurtainTransition';
 
 // Route-level code splitting: each page (with its heavy deps like motion/gsap
 // charts) loads on demand instead of bloating the initial bundle.
@@ -17,11 +18,39 @@ const AIChatPage = lazy(() => import('./pages/AIChatPage'));
 const HelpPage = lazy(() => import('./pages/HelpPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
 
+// Caption shown under the curtain mark, per destination route.
+function curtainLabelFor(pathname) {
+  switch (pathname) {
+    case '/chat':
+      return 'AI ASSISTANT';
+    case '/patents':
+      return 'PATENTS';
+    case '/research':
+      return 'RESEARCH';
+    case '/trends':
+      return 'TRENDS & VELOCITY';
+    case '/ecosystem':
+      return 'ECOSYSTEM';
+    case '/help':
+      return 'HELP';
+    case '/terms':
+      return 'TERMS';
+    default:
+      return 'OVERVIEW';
+  }
+}
+
 // Seamless overlap page transition (View Transitions API: fade + lift) on
 // every internal navigation — old and new pages overlap momentarily while
 // the incoming page rises into place. Falls back to instant navigation
 // where the API is unsupported or reduced-motion is preferred.
-function PageViewTransition() {
+//
+// EXCEPTION — the AI chat page uses a GSAP curtain transition instead:
+// navigating TO /chat plays the curtain intro, navigating AWAY plays the
+// curtain outro. See ChatCurtainTransition for the animation itself.
+// `curtainRef` drives the overlay; `curtainNavRef` flags navigations the
+// curtain already handled so the popstate watcher doesn't replay them.
+function PageViewTransition({ curtainRef, curtainNavRef }) {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -33,7 +62,6 @@ function PageViewTransition() {
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       const anchor = e.target?.closest?.('a[href]');
       if (!anchor || anchor.target === '_blank' || anchor.hasAttribute('download')) return;
-      if (anchor.closest('header')) return; // navbar navigates instantly — no transition
 
       let url;
       try {
@@ -44,14 +72,38 @@ function PageViewTransition() {
       if (url.origin !== window.location.origin) return;
       if (url.href === window.location.href) return;
 
+      const rel = url.pathname.startsWith(base) ? url.pathname.slice(base.length) || '/' : url.pathname;
+      const to = { pathname: rel, search: url.search, hash: url.hash };
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      // ---- Chat curtain (intro when entering, outro when leaving) ----
+      const fromChat = location.pathname === '/chat';
+      const toChat = rel === '/chat';
+      const curtain = curtainRef?.current;
+      if ((fromChat || toChat) && curtain && !reduceMotion) {
+        // Header links normally navigate instantly — but chat links always
+        // go through the curtain so the intro/outro never gets skipped.
+        e.preventDefault();
+        // Capture phase + stopPropagation so React Router's own Link handler
+        // doesn't navigate first (which would leave nothing to animate).
+        e.stopPropagation();
+        // Swallow clicks mid-animation so transitions can't stack.
+        if (curtain.isBusy()) return;
+        document.documentElement.classList.remove('vt-page');
+        curtainNavRef.current = true;
+        curtain.transitionTo(() => navigate(to), curtainLabelFor(rel)).finally(() => {
+          curtainNavRef.current = false;
+        });
+        return;
+      }
+
+      if (anchor.closest('header')) return; // navbar navigates instantly — no transition
+
       e.preventDefault();
       // Capture phase + stopPropagation so React Router's own Link handler
       // doesn't navigate first (which would leave nothing to animate).
       e.stopPropagation();
 
-      const rel = url.pathname.startsWith(base) ? url.pathname.slice(base.length) || '/' : url.pathname;
-      const to = { pathname: rel, search: url.search, hash: url.hash };
-      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       const canTransition = typeof document.startViewTransition === 'function' && !reduceMotion;
 
       document.documentElement.classList.add('vt-page');
@@ -72,7 +124,7 @@ function PageViewTransition() {
     // update happens inside startViewTransition's snapshot window.
     document.addEventListener('click', onClick, true);
     return () => document.removeEventListener('click', onClick, true);
-  }, [navigate, location.pathname]);
+  }, [navigate, location.pathname, curtainRef, curtainNavRef]);
 
   return null;
 }
@@ -96,9 +148,37 @@ function PageLoader() {
   );
 }
 // The AI chat is a standalone full-screen workspace — no navbar or footer.
-function AppShell() {
+function AppShell({ curtainRef, curtainNavRef }) {
   const { pathname } = useLocation();
   const isChat = pathname === '/chat';
+  const prevPathRef = useRef(pathname);
+  const mountedRef = useRef(false);
+
+  // Chat curtain for navigations the click interceptor can't cover:
+  // direct load / refresh on /chat (intro on mount) and browser
+  // back/forward (popstate). The route has already swapped by the time we
+  // see it, so start covered (hides the snap) and lift — same intro feel.
+  useEffect(() => {
+    const curtain = curtainRef?.current;
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      prevPathRef.current = pathname;
+      if (pathname === '/chat') {
+        // Wait a paint so the overlay + chat are laid out before lifting.
+        const id = requestAnimationFrame(() =>
+          requestAnimationFrame(() => curtain?.playIntro(curtainLabelFor(pathname)))
+        );
+        return () => cancelAnimationFrame(id);
+      }
+      return;
+    }
+    const prev = prevPathRef.current;
+    prevPathRef.current = pathname;
+    const involvedChat = pathname === '/chat' || prev === '/chat';
+    if (involvedChat && !curtainNavRef.current) {
+      curtain?.playIntro(curtainLabelFor(pathname));
+    }
+  }, [pathname, curtainRef, curtainNavRef]);
   return (
     <div style={{ background: 'var(--color-lavender-mist)', minHeight: '100vh', color: 'var(--color-ink)' }}>
       {!isChat && <Header />}
@@ -124,11 +204,14 @@ function AppShell() {
   );
 }
 export default function App() {
+  const curtainRef = useRef(null);
+  const curtainNavRef = useRef(false);
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       <ScrollToTop />
-      <PageViewTransition />
-      <AppShell />
+      <PageViewTransition curtainRef={curtainRef} curtainNavRef={curtainNavRef} />
+      <ChatCurtainTransition ref={curtainRef} />
+      <AppShell curtainRef={curtainRef} curtainNavRef={curtainNavRef} />
     </BrowserRouter>
   );
 }
