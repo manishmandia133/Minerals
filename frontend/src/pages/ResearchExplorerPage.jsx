@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { RESEARCH_PUBLICATIONS } from '../data/researchData';
-import { getResearchesLive } from '../api.client';
+import { getResearchesLive, fetchResearches } from '../api.client';
 import { useScrollReveal } from '../components/common/useScrollReveal';
 import {
   BookOpen,
@@ -14,9 +14,51 @@ import {
   Sparkles,
   Building2,
   ArrowUpRight,
+  RefreshCw,
   X,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+
+// Design tokens + control styles — identical to PatentExplorerPage so the
+// fetch button and modal look the same on both explorer pages.
+const INK = 'var(--color-ink)';
+const FAINT = '#6b7280';
+const LINE = 'var(--color-haze)';
+const PANEL = 'var(--color-paper-white)';
+const NAVY = 'var(--color-graphite)';
+
+const btn = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '7px',
+  fontSize: '13px',
+  fontWeight: 600,
+  padding: '8px 14px',
+  borderRadius: '87.5px',
+  cursor: 'pointer',
+  textDecoration: 'none',
+  whiteSpace: 'nowrap',
+  border: '1px solid transparent',
+};
+
+const fieldStyle = {
+  width: '100%',
+  fontSize: '13px',
+  padding: '8px 10px',
+  border: `1px solid ${LINE}`,
+  borderRadius: '18px',
+  background: PANEL,
+  color: INK,
+};
+
+const sectionLabel = {
+  fontSize: '11px',
+  fontWeight: 700,
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
+  color: FAINT,
+  marginBottom: '8px',
+};
 
 export default function ResearchExplorerPage() {
   // Live research corpus first, cached RESEARCH_PUBLICATIONS as fallback.
@@ -30,6 +72,13 @@ export default function ResearchExplorerPage() {
   const [selectedPaper, setSelectedPaper] = useState(null);
   const [bookmarkedIds, setBookmarkedIds] = useState([]);
   const [copiedId, setCopiedId] = useState(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState('');
+  const [showFetchModal, setShowFetchModal] = useState(false);
+  const [fetchKeyword, setFetchKeyword] = useState('cobalt battery India');
+  const [fetchSince, setFetchSince] = useState('2024-01-01');
+  const [fetchError, setFetchError] = useState('');
+  const fetchModalRef = React.useRef(null);
 
   useScrollReveal();
 
@@ -53,6 +102,57 @@ export default function ResearchExplorerPage() {
       cancelled = true;
     };
   }, []);
+
+  const handleLiveSync = async (keyword = fetchKeyword, since = fetchSince) => {
+    const research = String(keyword ?? '').trim();
+    const sinceDate = String(since ?? '').trim();
+    if (!research) {
+      setFetchError('Please enter a keyword.');
+      return;
+    }
+    if (sinceDate && !/^\d{4}-\d{2}-\d{2}$/.test(sinceDate)) {
+      setFetchError('Since must be YYYY-MM-DD.');
+      return;
+    }
+    setFetchError('');
+    setShowFetchModal(false);
+    setIsSyncing(true);
+    setSyncMessage('Contacting research corpus…');
+    try {
+      await fetchResearches({ research, ...(sinceDate ? { since: sinceDate } : {}) });
+      const live = await getResearchesLive();
+      if (live.length > 0) {
+        setPublications(live);
+        setUsingLiveData(true);
+        setSyncMessage(`Updated from live corpus — ${live.length} records.`);
+      } else {
+        setSyncMessage('Corpus returned no records — showing cached copy.');
+      }
+    } catch {
+      setSyncMessage('Corpus unreachable — showing cached copy.');
+    }
+    setTimeout(() => {
+      setIsSyncing(false);
+      setTimeout(() => setSyncMessage(''), 5000);
+    }, 1000);
+  };
+
+  // Close the fetch popover on Escape / outside click.
+  useEffect(() => {
+    if (!showFetchModal) return;
+    const onKey = (e) => { if (e.key === 'Escape') setShowFetchModal(false); };
+    const onPointer = (e) => {
+      if (fetchModalRef.current && !fetchModalRef.current.contains(e.target)) {
+        setShowFetchModal(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onPointer);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.removeEventListener('mousedown', onPointer);
+    };
+  }, [showFetchModal]);
 
   const toggleBookmark = (id, e) => {
     e.stopPropagation();
@@ -128,8 +228,8 @@ export default function ResearchExplorerPage() {
   return (
     <div style={{ background: 'var(--color-lavender-mist)', minHeight: '100vh', paddingTop: '100px', paddingBottom: '90px' }}>
       <div className="page-container" style={{ maxWidth: '1360px' }}>
-        {/* Top Header */}
-        <div style={{ marginBottom: '36px' }} className="reveal-init">
+        {/* Top Header — relative + zIndex so the open fetch popover layers above the KPI cards below */}
+        <div style={{ marginBottom: '36px', position: 'relative', zIndex: 60 }} className="reveal-init">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
             <span className="badge badge-emerald">
               <BookOpen style={{ width: '12px', height: '12px' }} />
@@ -150,7 +250,65 @@ export default function ResearchExplorerPage() {
               </p>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <div ref={fetchModalRef} style={{ position: 'relative' }}>
+                <button onClick={() => setShowFetchModal((v) => !v)} disabled={isSyncing} aria-haspopup="dialog" aria-expanded={showFetchModal} style={{ ...btn, background: PANEL, borderColor: LINE, color: INK }}>
+                  <RefreshCw style={{ width: '14px', height: '14px' }} />
+                  {isSyncing ? 'Fetching…' : 'Fetch Latest Research'}
+                </button>
+                {showFetchModal && (
+                  <div
+                    role="dialog"
+                    aria-label="Fetch latest research"
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 8px)',
+                      right: 0,
+                      zIndex: 50,
+                      width: 'min(300px, 90vw)',
+                      background: PANEL,
+                      border: `1px solid ${LINE}`,
+                      borderRadius: '14px',
+                      boxShadow: '0 12px 32px rgba(16, 24, 40, 0.16)',
+                      padding: '16px',
+                    }}
+                  >
+                    <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '12px' }}>Fetch Latest Research</div>
+                    <label htmlFor="fetch-research-keyword" style={{ ...sectionLabel, display: 'block' }}>Keyword</label>
+                    <input
+                      id="fetch-research-keyword"
+                      value={fetchKeyword}
+                      onChange={(e) => setFetchKeyword(e.target.value)}
+                      placeholder="e.g. lithium battery India"
+                      style={{ ...fieldStyle, borderRadius: '10px', padding: '9px 12px', marginBottom: '12px' }}
+                    />
+                    <label htmlFor="fetch-research-since" style={{ ...sectionLabel, display: 'block' }}>Since</label>
+                    <input
+                      id="fetch-research-since"
+                      type="date"
+                      value={fetchSince}
+                      onChange={(e) => setFetchSince(e.target.value)}
+                      style={{ ...fieldStyle, borderRadius: '10px', padding: '9px 12px' }}
+                    />
+                    {fetchError && (
+                      <div style={{ fontSize: '12px', color: '#b42318', marginTop: '8px' }}>{fetchError}</div>
+                    )}
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '14px' }}>
+                      <button onClick={() => setShowFetchModal(false)} style={{ ...btn, background: 'transparent', borderColor: LINE, color: INK }}>
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => handleLiveSync(fetchKeyword, fetchSince)}
+                        disabled={isSyncing}
+                        style={{ ...btn, background: NAVY, color: 'var(--color-paper-white)' }}
+                      >
+                        <RefreshCw style={{ width: '14px', height: '14px' }} />
+                        Fetch
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
               <button
                 onClick={exportCSV}
                 className="btn-pill"
@@ -162,6 +320,12 @@ export default function ResearchExplorerPage() {
             </div>
           </div>
         </div>
+
+        {syncMessage && (
+          <div style={{ margin: '0 0 20px', fontSize: '13px', color: 'var(--color-graphite)', background: PANEL, border: `1px solid ${LINE}`, borderRadius: '12px', padding: '9px 12px' }}>
+            {syncMessage}
+          </div>
+        )}
 
         {/* Analytics KPI Row */}
         <div

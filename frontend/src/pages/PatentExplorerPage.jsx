@@ -297,6 +297,11 @@ export default function PatentExplorerPage() {
   const [selectedPatent, setSelectedPatent] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
+  const [showFetchModal, setShowFetchModal] = useState(false);
+  const [fetchKeyword, setFetchKeyword] = useState('lithium extraction India');
+  const [fetchPages, setFetchPages] = useState(2);
+  const [fetchError, setFetchError] = useState('');
+  const fetchModalRef = React.useRef(null);
   const [bookmarkedIds, setBookmarkedIds] = useState([]);
   const [bookmarksOnly, setBookmarksOnly] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
@@ -325,11 +330,19 @@ export default function PatentExplorerPage() {
     };
   }, []);
 
-  const handleLiveSync = async () => {
+  const handleLiveSync = async (keyword = fetchKeyword, pages = fetchPages) => {
+    const patents = String(keyword ?? '').trim();
+    const patent_pages = Math.max(1, Number(pages) || 1);
+    if (!patents) {
+      setFetchError('Please enter a keyword.');
+      return;
+    }
+    setFetchError('');
+    setShowFetchModal(false);
     setIsSyncing(true);
     setSyncMessage('Contacting patent corpus…');
     try {
-      await fetchPatents({ patents: 'lithium extraction India', patent_pages: 2 });
+      await fetchPatents({ patents, patent_pages });
       const live = await getPatentsLive();
       if (live.length > 0) {
         setRecords(live);
@@ -346,6 +359,23 @@ export default function PatentExplorerPage() {
       setTimeout(() => setSyncMessage(''), 5000);
     }, 1000);
   };
+
+  // Close the fetch popover on Escape / outside click.
+  useEffect(() => {
+    if (!showFetchModal) return;
+    const onKey = (e) => { if (e.key === 'Escape') setShowFetchModal(false); };
+    const onPointer = (e) => {
+      if (fetchModalRef.current && !fetchModalRef.current.contains(e.target)) {
+        setShowFetchModal(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onPointer);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.removeEventListener('mousedown', onPointer);
+    };
+  }, [showFetchModal]);
 
   const toggleBookmark = (id, e) => {
     e.stopPropagation();
@@ -451,8 +481,8 @@ export default function PatentExplorerPage() {
           <div>Source: {usingLiveData ? 'Live patent corpus' : 'IPO InPASS (ipindiaservices.gov.in) · Cached Sep 2026'} · IN jurisdiction</div>
         </div>
 
-        {/* title row */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '16px', paddingBottom: '16px' }}>
+        {/* title row — relative + zIndex so the open fetch popover layers above the grid below */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '16px', paddingBottom: '16px', position: 'relative', zIndex: 60 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
               <span className="badge badge-emerald">
@@ -480,10 +510,66 @@ export default function PatentExplorerPage() {
             </p>
           </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <button onClick={handleLiveSync} disabled={isSyncing} style={{ ...btn, background: PANEL, borderColor: LINE, color: INK }}>
-              <RefreshCw style={{ width: '14px', height: '14px' }} />
-              {isSyncing ? 'Checking…' : 'Refresh from InPASS'}
-            </button>
+            <div ref={fetchModalRef} style={{ position: 'relative' }}>
+              <button onClick={() => setShowFetchModal((v) => !v)} disabled={isSyncing} aria-haspopup="dialog" aria-expanded={showFetchModal} style={{ ...btn, background: PANEL, borderColor: LINE, color: INK }}>
+                <RefreshCw style={{ width: '14px', height: '14px' }} />
+                {isSyncing ? 'Fetching…' : 'Fetch Latest Patents'}
+              </button>
+              {showFetchModal && (
+                <div
+                  role="dialog"
+                  aria-label="Fetch latest patents"
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 8px)',
+                    right: 0,
+                    zIndex: 50,
+                    width: 'min(300px, 90vw)',
+                    background: PANEL,
+                    border: `1px solid ${LINE}`,
+                    borderRadius: '14px',
+                    boxShadow: '0 12px 32px rgba(16, 24, 40, 0.16)',
+                    padding: '16px',
+                  }}
+                >
+                  <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '12px' }}>Fetch Latest Patents</div>
+                  <label htmlFor="fetch-keyword" style={{ ...sectionLabel, display: 'block' }}>Keyword</label>
+                  <input
+                    id="fetch-keyword"
+                    value={fetchKeyword}
+                    onChange={(e) => setFetchKeyword(e.target.value)}
+                    placeholder="e.g. lithium extraction India"
+                    style={{ ...selectStyle, borderRadius: '10px', padding: '9px 12px', marginBottom: '12px' }}
+                  />
+                  <label htmlFor="fetch-pages" style={{ ...sectionLabel, display: 'block' }}>Patent pages</label>
+                  <input
+                    id="fetch-pages"
+                    type="number"
+                    min={1}
+                    value={fetchPages}
+                    onChange={(e) => setFetchPages(e.target.value === '' ? '' : Number(e.target.value))}
+                    placeholder="e.g. 2"
+                    style={{ ...selectStyle, borderRadius: '10px', padding: '9px 12px' }}
+                  />
+                  {fetchError && (
+                    <div style={{ fontSize: '12px', color: '#b42318', marginTop: '8px' }}>{fetchError}</div>
+                  )}
+                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '14px' }}>
+                    <button onClick={() => setShowFetchModal(false)} style={{ ...btn, background: 'transparent', borderColor: LINE, color: INK }}>
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => handleLiveSync(fetchKeyword, fetchPages)}
+                      disabled={isSyncing}
+                      style={{ ...btn, background: NAVY, color: 'var(--color-paper-white)' }}
+                    >
+                      <RefreshCw style={{ width: '14px', height: '14px' }} />
+                      Fetch
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
             <button onClick={exportCSV} style={{ ...btn, background: NAVY, color: 'var(--color-paper-white)' }}>
               <Download style={{ width: '14px', height: '14px' }} />
               CSV ({filteredRecords.length})
