@@ -166,3 +166,5 @@ Env (plain exports, all read in `src/config.js`): `PORT` (8000) · `RECORDS_DIR`
 `npm test` — 3 offline tests (temp `RECORDS_DIR`, ephemeral ports): record round trip with dedupe, empty/unknown-source `400`, and `since` + `sort=newest` filtering.
 
 Resilience by design: per-source `[pending]` stubs (never stored) · per-query try/catch in the job (one bad query can't kill a cycle) · enrich swallows page-level errors. Politeness: 500 ms between queries, 300 ms between enrich items.
+
+Made By Manish

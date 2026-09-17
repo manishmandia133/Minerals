@@ -133,3 +133,6 @@ No `.env` files are committed — copy the vars above into a local `.env` per pa
 - Backend: Express 5, `pg`, `cors`, `body-parser`, `cookie-parser`
 - RAG: Express 5, LangChain (`@langchain/core`, `@langchain/community`, `@langchain/google-genai`), `@google/genai`, Postgres
 - Intel: Express 4, Node built-in `fetch`, `csv-parse`, `fuzzball`, `parquetjs`, BigQuery, axios
+
+
+
