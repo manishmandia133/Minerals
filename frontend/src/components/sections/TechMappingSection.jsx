@@ -24,6 +24,7 @@ const gapColors = {
 const sectionStyle = {
   background: 'var(--color-lavender-mist)',
   padding: 'clamp(48px, 8vw, 72px) clamp(20px, 5vw, 40px)',
+  scrollMarginTop: '90px',
 };
 
 const labelStyle = {

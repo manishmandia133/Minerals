@@ -944,8 +944,8 @@ section {
 }
 
 .chat-curtain-logo {
-  width: clamp(64px, 9vw, 88px);
-  height: clamp(64px, 9vw, 88px);
+  width: clamp(72px, 12vw, 110px);
+  height: auto;
   opacity: 0;
   will-change: transform, opacity;
   filter: drop-shadow(0 8px 28px rgba(0, 0, 0, 0.45));
@@ -953,7 +953,7 @@ section {
 
 .chat-curtain-logo svg {
   width: 100%;
-  height: 100%;
+  height: auto;
   display: block;
   overflow: visible;
 }
@@ -1228,5 +1228,32 @@ html.vt-page::view-transition-new(root) {
   html.vt-page::view-transition-old(root),
 html.vt-page::view-transition-new(root) {
     animation: none !important;
+  }
+}
+
+/* ==========================================================================
+   PRINT — Policy Brief "Print / Save PDF" (window.print)
+   Screen appearance is untouched; this block only applies on paper/PDF.
+   Hides fixed header, footer shader, chat curtain and dead UI (.no-print),
+   forces scroll-reveal sections visible, and resets page clearance.
+   ========================================================================== */
+@media print {
+  header,
+  footer,
+  .chat-curtain {
+    display: none !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .reveal-init {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .policy-brief-print {
+    padding-top: 0 !important;
   }
 }

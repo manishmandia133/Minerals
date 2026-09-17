@@ -1,16 +1,14 @@
-// R&D Ecosystem Page — institutions + vulnerability radar.
-// Heavy patent velocity analytics live on /trends; patent records on /patents; papers on /research.
-import React, { useState, useEffect, useMemo } from 'react';
+// R&D Ecosystem hub — header + KPIs + shortcuts + network cards + CTA.
+// Detail explorers live on /institutions, /gaps, /opportunities.
+import React from 'react';
 import { Link } from 'react-router-dom';
-import TechnologyGapsSection from '../components/sections/TechnologyGapsSection';
 import { useScrollReveal } from '../components/common/useScrollReveal';
 import SplitText from '../components/bits/SplitText';
 import CountUp from '../components/bits/CountUp';
 import SpotlightCard from '../components/bits/SpotlightCard';
 import StarBorder from '../components/bits/StarBorder';
-import { PLATFORM_STATS, TECHNOLOGY_GAPS, LEADING_ORGANISATIONS } from '../data/mineralsData';
-import { getPatentsLive, getResearchesLive, classifyInstitution } from '../api.client';
-import { TrendingUp, FileText, BookOpen, ArrowUpRight, Building2, MapPin, FlaskConical, Network, Sparkles } from 'lucide-react';
+import { PLATFORM_STATS, TECHNOLOGY_GAPS } from '../data/mineralsData';
+import { TrendingUp, FileText, BookOpen, ArrowUpRight, Building2, FlaskConical, Network, Sparkles, ShieldAlert } from 'lucide-react';
 
 const INK = 'var(--color-ink)';
 const GRAPHITE = 'var(--color-graphite)';
@@ -18,41 +16,6 @@ const HAZE = 'var(--color-haze)';
 const MIST = 'var(--color-lavender-mist)';
 
 const criticalGaps = TECHNOLOGY_GAPS.filter((g) => g.vulnerabilityLevel === 'Critical').length;
-// Static fallback leaderboard (cached copy) when the live corpus is unreachable.
-const STATIC_TOP_ORGS = [...LEADING_ORGANISATIONS].sort((a, b) => b.patentsCount - a.patentsCount).slice(0, 4);
-
-function orgTypeShort(type = '') {
-  const t = type.toLowerCase();
-  if (t.includes('csir') || t.includes('national r&d') || t.includes('mineral processing')) return 'CSIR Lab';
-  if (t.includes('academic') || t.includes('consortium')) return 'Academia';
-  if (t.includes('strategic') || t.includes('public sector') || t.includes('dae')) return 'Strategic PSU';
-  if (t.includes('corporate')) return 'Industry';
-  return 'Research Org';
-}
-
-// Collaboration corridors curated from LEADING_ORGANISATIONS networkPartners
-const CORRIDORS = [
-  {
-    name: 'Jamshedpur Steel–Research Corridor',
-    orgs: ['CSIR-NML', 'Tata Steel R&D', 'IIT Kharagpur'],
-    focus: 'Battery recycling & titanium sponge metallurgy',
-  },
-  {
-    name: 'Bhubaneswar Minerals Corridor',
-    orgs: ['CSIR-IMMT', 'NALCO', 'IREL'],
-    focus: 'Red-mud valorisation & beach-sand beneficiation',
-  },
-  {
-    name: 'Mumbai Strategic Materials Corridor',
-    orgs: ['BARC', 'IREL', 'DMRL / MIDHANI'],
-    focus: 'Rare-earth separation & nuclear-grade metals',
-  },
-  {
-    name: 'Chennai EV-Battery Corridor',
-    orgs: ['IIT Madras', 'Ola Electric', 'Ather Energy'],
-    focus: 'Fast-charging cells & cathode precursor scale-up',
-  },
-];
 
 const SHORTCUTS = [
   {
@@ -75,101 +38,33 @@ const SHORTCUTS = [
   },
 ];
 
+const NETWORK_CARDS = [
+  {
+    to: '/institutions',
+    icon: Building2,
+    title: 'Leading Institutions',
+    desc: 'Patent leaderboard and capability dossiers.',
+  },
+  {
+    to: '/gaps',
+    icon: ShieldAlert,
+    title: 'Technology Gaps',
+    desc: 'TRL deficits, import exposure and emerging areas.',
+  },
+  {
+    to: '/opportunities',
+    icon: FlaskConical,
+    title: 'Opportunities & Corridors',
+    desc: 'Priority bets + lab-to-industry clusters',
+  },
+];
+
 export default function EcosystemPage() {
   useScrollReveal();
-  // Live corpus first; static LEADING_ORGANISATIONS / PLATFORM_STATS fallback.
-  const [livePatents, setLivePatents] = useState(null);
-  const [liveResearch, setLiveResearch] = useState(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    getPatentsLive()
-      .then((p) => {
-        if (!cancelled) setLivePatents(p);
-      })
-      .catch(() => {
-        if (!cancelled) setLivePatents([]);
-      });
-    getResearchesLive()
-      .then((r) => {
-        if (!cancelled) setLiveResearch(r);
-      })
-      .catch(() => {
-        if (!cancelled) setLiveResearch([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // Top 4 organisations by live patent + paper volume.
-  const liveTopOrgs = useMemo(() => {
-    if (!livePatents?.length && !liveResearch?.length) return null;
-    const byOrg = {};
-    const touch = (name, kind, mineral, tech) => {
-      const key = (name || 'Unknown').trim() || 'Unknown';
-      const o = (byOrg[key] =
-        byOrg[key] || { name: key, patents: 0, papers: 0, minerals: {}, techs: {} });
-      if (kind === 'patent') o.patents += 1;
-      else o.papers += 1;
-      const m = (mineral || '').trim();
-      if (m) o.minerals[m] = (o.minerals[m] || 0) + 1;
-      const t = (tech || '').trim();
-      if (t) o.techs[t] = (o.techs[t] || 0) + 1;
-    };
-    (livePatents || []).forEach((p) => touch(p.applicant, 'patent', p.mineral, p.category));
-    (liveResearch || []).forEach((p) => touch(p.institution, 'paper', p.mineral, p.domain));
-    const ranked = Object.values(byOrg).sort(
-      (a, b) => b.patents + b.papers - (a.patents + a.papers)
-    );
-    if (ranked.length === 0) return null;
-    return ranked.slice(0, 4).map((o, i) => ({
-      id: `live-org-${i}`,
-      name: o.name,
-      location: 'India',
-      type: classifyInstitution(o.name),
-      patentsCount: o.patents,
-      activeResearchPapers: o.papers,
-      citationImpact: null,
-      flagshipTech:
-        Object.entries(o.techs)
-          .sort((a, b) => b[1] - a[1])
-          .map(([t]) => t)[0] || 'Critical minerals R&D',
-      topMinerals: Object.entries(o.minerals)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 3)
-        .map(([m]) => m),
-      trlSpecialization: '—',
-      networkPartners: [],
-    }));
-  }, [livePatents, liveResearch]);
-
-  const TOP_ORGS = liveTopOrgs || STATIC_TOP_ORGS;
-  const maxOrgPatents = Math.max(...TOP_ORGS.map((o) => o.patentsCount), 1);
-  const totalOrgPatents = TOP_ORGS.reduce((a, o) => a + o.patentsCount, 0);
-  const totalOrgPapers = TOP_ORGS.reduce((a, o) => a + (o.activeResearchPapers || 0), 0);
-  const usingLive = !!liveTopOrgs;
-  const livePatentCount = livePatents?.length || 0;
-  const liveOrgCount = useMemo(() => {
-    const names = new Set();
-    (livePatents || []).forEach((p) => {
-      const n = (p.applicant || '').trim();
-      if (n) names.add(n.toLowerCase());
-    });
-    (liveResearch || []).forEach((p) => {
-      const n = (p.institution || '').trim();
-      if (n) names.add(n.toLowerCase());
-    });
-    return names.size;
-  }, [livePatents, liveResearch]);
-
-  const [selectedOrgId, setSelectedOrgId] = useState(null);
-  const selectedOrg = TOP_ORGS.find((o) => o.id === selectedOrgId) ?? TOP_ORGS[0];
-  const setSelectedOrg = (org) => setSelectedOrgId(org?.id ?? null);
 
   const kpis = [
-    { label: 'Active R&D Institutions', to: usingLive ? liveOrgCount : PLATFORM_STATS.activeRndInstitutions, separator: '', suffix: '', sub: 'CSIR • IITs • PSUs • Industry', accent: false },
-    { label: 'Patents Tracked', to: usingLive ? livePatentCount : PLATFORM_STATS.totalPatentsTracked, separator: ',', suffix: '', sub: usingLive ? 'Live patent corpus' : 'IPO InPASS critical-minerals register', accent: true },
+    { label: 'Active R&D Institutions', to: PLATFORM_STATS.activeRndInstitutions, separator: '', suffix: '', sub: 'CSIR • IITs • PSUs • Industry', accent: false },
+    { label: 'Patents Tracked', to: PLATFORM_STATS.totalPatentsTracked, separator: ',', suffix: '', sub: 'IPO InPASS critical-minerals register', accent: true },
     { label: 'Critical Gaps', to: criticalGaps, separator: '', suffix: '', sub: '100% import-dependent bottlenecks', accent: false },
     { label: 'Average India TRL', to: PLATFORM_STATS.averageIndiaTRL, separator: '', suffix: ' / 9', sub: 'Bench-to-pilot readiness', accent: false },
   ];
@@ -197,8 +92,8 @@ export default function EcosystemPage() {
           </h1>
           <p style={{ color: GRAPHITE, fontSize: '15px', marginTop: '8px', maxWidth: '700px' }}>
             Who leads India&apos;s critical-minerals R&amp;D and where sovereign capability
-            still trails the global frontier — {usingLive ? liveOrgCount : PLATFORM_STATS.activeRndInstitutions} institutions,{' '}
-            {(usingLive ? livePatentCount : PLATFORM_STATS.totalPatentsTracked).toLocaleString()} patents, {criticalGaps} critical gaps.
+            still trails the global frontier — {PLATFORM_STATS.activeRndInstitutions} institutions,{' '}
+            {PLATFORM_STATS.totalPatentsTracked.toLocaleString()} patents, {criticalGaps} critical gaps.
           </p>
         </div>
 
@@ -237,157 +132,36 @@ export default function EcosystemPage() {
             </Link>
           ))}
         </div>
-      </div>
 
-      {/* Leading institutions explorer */}
-      <section className="reveal-init" style={{ background: MIST, padding: '72px 0 8px', marginTop: '16px' }}>
-        <div className="page-container" style={{ maxWidth: '1360px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '16px', marginBottom: '32px' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--color-electric-indigo)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, marginBottom: '10px' }}>
-                <Building2 style={{ width: '14px', height: '14px' }} />
-                <span>Who leads domestic R&amp;D</span>
-              </div>
-              <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.1, color: INK }}>
-                Leading Institutions
-              </h2>
-            </div>
-            <p style={{ color: GRAPHITE, fontSize: '14px', maxWidth: '420px', lineHeight: 1.6 }}>
-              Top {TOP_ORGS.length} institutions holding {totalOrgPatents} patents and {totalOrgPapers.toLocaleString()} papers.
-              Select any institution to open its capability dossier.
-            </p>
+        {/* Explore the network — links to the four sub-pages */}
+        <div className="reveal-init" style={{ paddingTop: '32px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--color-electric-indigo)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, marginBottom: '10px' }}>
+            <Network style={{ width: '14px', height: '14px' }} />
+            <span>Explore the network</span>
           </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '24px', alignItems: 'start' }}>
-            {/* Selector list with leaderboard bars */}
-            <div style={{ gridColumn: 'span 7', minWidth: 0 }} className="eco-orgs">
-              <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', color: GRAPHITE, fontWeight: 600, marginBottom: '12px' }}>
-                Patent output leaderboard
-              </div>
-              {TOP_ORGS.map((org) => {
-                const isSelected = selectedOrg?.id === org.id;
-                return (
-                  <div
-                    key={org.id}
-                    onClick={() => setSelectedOrg(org)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedOrg(org); } }}
-                    tabIndex={0}
-                    role="button"
-                    aria-pressed={isSelected}
-                    aria-label={`${org.name}, ${org.patentsCount} patents`}
-                    className={`org-card ${isSelected ? 'selected' : ''}`}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '10px' }}>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: '15px', fontWeight: 500, color: INK, lineHeight: 1.35 }}>{org.name}</div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: GRAPHITE, marginTop: '4px' }}>
-                          <MapPin style={{ width: '12px', height: '12px', flexShrink: 0 }} />
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{org.location}</span>
-                        </div>
-                      </div>
-                      <span className="badge" style={{ fontSize: '11px', padding: '2px 8px', flexShrink: 0 }}>{orgTypeShort(org.type)}</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div style={{ flex: 1, height: '6px', borderRadius: '999px', background: 'var(--color-haze)', overflow: 'hidden' }}>
-                        <div style={{ width: `${Math.max(6, (org.patentsCount / maxOrgPatents) * 100)}%`, height: '100%', borderRadius: '999px', background: isSelected ? 'var(--color-electric-indigo)' : 'var(--color-graphite)', transition: 'width 300ms ease' }} />
-                      </div>
-                      <span style={{ fontSize: '12px', fontWeight: 600, color: isSelected ? 'var(--color-electric-indigo)' : INK, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
-                        {org.patentsCount} patents
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Sticky dossier */}
-            <div style={{ gridColumn: 'span 5', minWidth: 0, position: 'sticky', top: '100px' }} className="eco-dossier">
-              {selectedOrg && (
-                <div className="dossier-card">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', paddingBottom: '16px', borderBottom: `1px solid ${HAZE}`, marginBottom: '18px', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', color: GRAPHITE, fontWeight: 600 }}>
-                      Institution dossier
+          <h2 style={{ fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 500, letterSpacing: '-0.02em', color: INK, marginBottom: '8px' }}>
+            Dive into the ecosystem
+          </h2>
+          <p style={{ color: GRAPHITE, fontSize: '14px', maxWidth: '640px', marginBottom: '24px', lineHeight: 1.6 }}>
+            Institutions, gaps and opportunities each have a dedicated page.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '14px' }}>
+            {NETWORK_CARDS.map(({ to, icon: Icon, title, desc }) => (
+              <Link key={to} to={to} style={{ textDecoration: 'none' }}>
+                <SpotlightCard className="card" spotlightColor="rgba(26, 47, 251, 0.09)" style={{ padding: '18px 20px', display: 'flex', gap: '12px', alignItems: 'flex-start', height: '100%' }}>
+                  <span style={{ width: '34px', height: '34px', borderRadius: '10px', background: MIST, border: `1px solid ${HAZE}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Icon style={{ width: '16px', height: '16px', color: INK }} />
+                  </span>
+                  <span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600, color: INK }}>
+                      {title} <ArrowUpRight style={{ width: '13px', height: '13px' }} />
                     </span>
-                    <span className="badge badge-indigo" style={{ fontSize: '11px', padding: '2px 8px' }}>{orgTypeShort(selectedOrg.type)}</span>
-                  </div>
-
-                  <h3 style={{ fontSize: '20px', fontWeight: 500, lineHeight: 1.3, color: INK, marginBottom: '4px' }}>{selectedOrg.name}</h3>
-                  <div style={{ fontSize: '12px', color: GRAPHITE, marginBottom: '18px' }}>{selectedOrg.type} • {selectedOrg.location}</div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '10px', marginBottom: '18px' }}>
-                      {[
-                        ['Patents', String(selectedOrg.patentsCount)],
-                        ['Papers', String(selectedOrg.activeResearchPapers ?? 0)],
-                        ['Cite impact', selectedOrg.citationImpact != null ? selectedOrg.citationImpact.toFixed(1) : '—'],
-                      ].map(([k, v]) => (
-                      <div key={k} className="stat-box-dossier">
-                        <div style={{ fontSize: '20px', fontWeight: 500, color: 'var(--color-electric-indigo)' }}>{v}</div>
-                        <div style={{ fontSize: '11px', color: GRAPHITE, marginTop: '2px' }}>{k}</div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', color: GRAPHITE, fontWeight: 600, marginBottom: '8px' }}>
-                    Flagship capability
-                  </div>
-                  <p style={{ fontSize: '13px', color: INK, lineHeight: 1.6, padding: '14px 16px', borderRadius: '14px', background: MIST, border: `1px solid ${HAZE}`, marginBottom: '18px' }}>
-                    {selectedOrg.flagshipTech}
-                  </p>
-
-                  <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', color: GRAPHITE, fontWeight: 600, marginBottom: '8px' }}>
-                    Mineral focus • {selectedOrg.trlSpecialization}
-                  </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '18px' }}>
-                    {selectedOrg.topMinerals.map((m) => (
-                      <span key={m} className="mineral-chip">{m}</span>
-                    ))}
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', color: GRAPHITE, fontWeight: 600, marginBottom: '8px' }}>
-                    <Network style={{ width: '12px', height: '12px' }} />
-                    Network partners
-                  </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                    {selectedOrg.networkPartners.map((p) => (
-                      <span key={p} className="partner-chip">{p}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+                    <span style={{ display: 'block', fontSize: '12px', color: GRAPHITE, marginTop: '3px', lineHeight: 1.45 }}>{desc}</span>
+                  </span>
+                </SpotlightCard>
+              </Link>
+            ))}
           </div>
-        </div>
-      </section>
-
-      {/* Gap dossiers */}
-      <div className="reveal-init">
-        <TechnologyGapsSection />
-      </div>
-
-      {/* Collaboration corridors */}
-      <div className="page-container reveal-init" style={{ maxWidth: '1360px', paddingTop: '56px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--color-electric-indigo)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, marginBottom: '10px' }}>
-          <Network style={{ width: '14px', height: '14px' }} />
-          <span>How the ecosystem connects</span>
-        </div>
-        <h2 style={{ fontSize: 'clamp(24px, 3vw, 34px)', fontWeight: 500, letterSpacing: '-0.02em', color: INK, marginBottom: '8px' }}>
-          Collaboration corridors
-        </h2>
-        <p style={{ color: GRAPHITE, fontSize: '14px', maxWidth: '640px', marginBottom: '24px', lineHeight: 1.6 }}>
-          Lab-to-industry clusters where patents, pilots and production meet — drawn from institutional partnership networks.
-        </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
-          {CORRIDORS.map((c) => (
-            <SpotlightCard key={c.name} className="card card-interactive" spotlightColor="rgba(26, 47, 251, 0.09)" style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div style={{ fontSize: '15px', fontWeight: 500, color: INK, lineHeight: 1.35 }}>{c.name}</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                {c.orgs.map((o) => (
-                  <span key={o} className="mineral-chip">{o}</span>
-                ))}
-              </div>
-              <div style={{ fontSize: '12px', color: GRAPHITE, lineHeight: 1.55, paddingTop: '10px', borderTop: `1px solid ${HAZE}` }}>{c.focus}</div>
-            </SpotlightCard>
-          ))}
         </div>
       </div>
 
@@ -427,13 +201,6 @@ export default function EcosystemPage() {
       </div>
 
       <div style={{ paddingBottom: '40px' }} />
-
-      <style>{`
-        @media (max-width: 900px) {
-          .eco-orgs, .eco-dossier { grid-column: span 12 !important; }
-          .eco-dossier { position: static !important; }
-        }
-      `}</style>
     </div>
   );
 }

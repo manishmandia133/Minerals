@@ -1,10 +1,11 @@
 // Research Explorer Page — Dedicated Full-Page Indian Scientific & R&D Publications Repository
 // Indexed from OpenAlex, CSIR Labs, IITs, IISc, and premier metallurgy & materials journals
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { RESEARCH_PUBLICATIONS } from '../data/researchData';
 import { getResearchesLive } from '../api.client';
 import { useScrollReveal } from '../components/common/useScrollReveal';
+import Pagination from '../components/common/Pagination';
 import {
   BookOpen,
   Search,
@@ -14,6 +15,7 @@ import {
   Sparkles,
   Building2,
   ArrowUpRight,
+  ChevronRight,
   X,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -30,6 +32,9 @@ export default function ResearchExplorerPage() {
   const [selectedPaper, setSelectedPaper] = useState(null);
   const [bookmarkedIds, setBookmarkedIds] = useState([]);
   const [copiedId, setCopiedId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const resultsTopRef = useRef(null);
+  const PAGE_SIZE = 8;
 
   useScrollReveal();
 
@@ -125,9 +130,37 @@ export default function ResearchExplorerPage() {
 
   const totalCitations = filteredPapers.reduce((acc, p) => acc + p.citations, 0);
 
+  // Reset to page 1 whenever the result set changes.
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedMineral, selectedInstType, sortBy]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredPapers.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const pagedPapers = useMemo(
+    () => filteredPapers.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [filteredPapers, safePage]
+  );
+
+  const handlePageChange = (p) => {
+    setCurrentPage(p);
+    resultsTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   return (
     <div style={{ background: 'var(--color-lavender-mist)', minHeight: '100vh', paddingTop: '100px', paddingBottom: '90px' }}>
       <div className="page-container" style={{ maxWidth: '1360px' }}>
+        {/* utility line — mirrors Patent search */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', padding: '18px 0 12px', fontSize: '12px', color: 'var(--color-graphite)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Link to="/" style={{ color: 'var(--color-graphite)', textDecoration: 'none' }}>Home</Link>
+            <ChevronRight style={{ width: '12px', height: '12px' }} />
+            <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>Research explorer</span>
+          </div>
+          <div>Source: {usingLiveData ? 'Live research corpus' : 'OpenAlex · Cached Sep 2026'} · IN jurisdiction</div>
+        </div>
+
         {/* Top Header */}
         <div style={{ marginBottom: '36px' }} className="reveal-init">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
@@ -361,8 +394,9 @@ export default function ResearchExplorerPage() {
         </div>
 
         {/* Publication Cards Grid with Staggered Entrance */}
+        <div ref={resultsTopRef} style={{ scrollMarginTop: '90px' }} />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 420px), 1fr))', gap: '20px' }}>
-          {filteredPapers.map((paper, idx) => {
+          {pagedPapers.map((paper, idx) => {
             const isBookmarked = bookmarkedIds.includes(paper.id);
 
             return (
@@ -507,6 +541,10 @@ export default function ResearchExplorerPage() {
           })}
         </div>
 
+        {filteredPapers.length > 0 && (
+          <Pagination page={safePage} totalPages={totalPages} onChange={handlePageChange} label="research publications" />
+        )}
+
         {/* Empty state */}
         {filteredPapers.length === 0 && (
           <div
@@ -529,6 +567,7 @@ export default function ResearchExplorerPage() {
                 setSearchQuery('');
                 setSelectedMineral('all');
                 setSelectedInstType('all');
+                setCurrentPage(1);
               }}
               className="btn-pill"
             >

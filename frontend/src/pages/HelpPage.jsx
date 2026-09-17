@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { useScrollReveal } from '../components/common/useScrollReveal';
 import SplitText from '../components/bits/SplitText';
 import SpotlightCard from '../components/bits/SpotlightCard';
+import { METHODOLOGY } from '../data/mineralsData';
 import {
   LifeBuoy,
   Search,
@@ -310,6 +311,49 @@ export default function HelpPage() {
             </div>
           </div>
         </div>
+
+        {/* Methodology & Data Sources */}
+        <section id="methodology" className="reveal-init card" style={{ padding: '24px', marginTop: '8px', marginBottom: '20px', scrollMarginTop: '90px' }} aria-labelledby="methodology-heading">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
+            <span className="badge badge-indigo">Methodology</span>
+            <span className="badge">Data sources & limitations</span>
+          </div>
+          <h2 id="methodology-heading" style={{ fontSize: 'clamp(20px, 2.6vw, 28px)', fontWeight: 500, letterSpacing: '-0.02em', color: INK, marginBottom: '8px' }}>
+            Methodology &amp; Data Sources
+          </h2>
+          <p style={{ color: GRAPHITE, fontSize: '14px', maxWidth: '720px', marginBottom: '18px', lineHeight: 1.6 }}>
+            How Minerals builds its patent, research and readiness picture — and where the numbers come from.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '18px' }}>
+            <div style={{ paddingBottom: '12px', borderBottom: `1px solid ${HAZE}` }}>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: INK, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>Corpus coverage</div>
+              <div style={{ fontSize: '13.5px', color: GRAPHITE, lineHeight: 1.65 }}>{METHODOLOGY.corpusCoverage}</div>
+            </div>
+            <div style={{ paddingBottom: '12px', borderBottom: `1px solid ${HAZE}` }}>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: INK, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>TRL method</div>
+              <div style={{ fontSize: '13.5px', color: GRAPHITE, lineHeight: 1.65 }}>{METHODOLOGY.trlMethod}</div>
+            </div>
+            <div style={{ paddingBottom: '12px', borderBottom: `1px solid ${HAZE}` }}>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: INK, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>Refresh cadence</div>
+              <div style={{ fontSize: '13.5px', color: GRAPHITE, lineHeight: 1.65 }}>{METHODOLOGY.refreshCadence}</div>
+            </div>
+          </div>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: INK, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>Limitations</div>
+          <ul style={{ margin: '0 0 18px', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13.5px', color: GRAPHITE, lineHeight: 1.65 }}>
+            {METHODOLOGY.limitations.map((l) => (
+              <li key={l}>{l}</li>
+            ))}
+          </ul>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: INK, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>Sources</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {METHODOLOGY.sources.map((s) => (
+              <div key={s.name} style={{ paddingBottom: '10px', borderBottom: `1px solid ${HAZE}` }}>
+                <div style={{ fontSize: '13.5px', fontWeight: 500, color: INK }}>{s.name}</div>
+                <div style={{ fontSize: '13px', color: GRAPHITE, lineHeight: 1.6 }}>{s.detail}</div>
+              </div>
+            ))}
+          </div>
+        </section>
 
         <div style={{ paddingBottom: '48px' }} />
       </div>

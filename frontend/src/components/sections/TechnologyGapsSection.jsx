@@ -45,7 +45,7 @@ export default function TechnologyGapsSection() {
   };
 
   return (
-    <section id="gaps" className="section-spacing" style={{ background: "var(--color-lavender-mist)", padding: "80px 0", width: "100%", overflowX: "clip", boxSizing: "border-box" }}>
+      <section id="gaps" className="section-spacing" style={{ background: "var(--color-lavender-mist)", padding: "80px 0", width: "100%", overflowX: "clip", boxSizing: "border-box", scrollMarginTop: "90px" }}>
       <div className="page-container" style={{ maxWidth: "1360px", display: "flex", flexDirection: "column", gap: "40px", width: "100%", boxSizing: "border-box" }}>
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">

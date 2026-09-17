@@ -7,6 +7,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { PATENT_RECORDS, LEADING_ORGANISATIONS } from '../data/mineralsData';
 import { useScrollReveal } from '../components/common/useScrollReveal';
 import { askRAG } from '../api.client';
+import MineralsLogo from '../components/common/MineralsLogo';
 import {
   Sparkles,
   Send,
@@ -1316,29 +1317,14 @@ export default function AIChatPage() {
           <div className="chat-topdivider" style={{ width: '1px', height: '24px', background: 'var(--color-haze)' }} />
 
           <div className="chat-identity" style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-            <span
-              style={{
-                width: '34px',
-                height: '34px',
-                borderRadius: '12px',
-                background: 'linear-gradient(135deg, #4f46e5 0%, #818cf8 100%)',
-                color: '#fff',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                boxShadow: '0 4px 12px rgba(79,70,229,0.35)',
-              }}
-            >
-              <Sparkles style={{ width: '16px', height: '16px' }} />
-            </span>
+            <MineralsLogo
+              width={30}
+              height={18}
+              style={{ color: 'var(--color-ink)', flexShrink: 0, display: 'block' }}
+            />
             <div style={{ minWidth: 0 }}>
               <div className="chat-identity-title" style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-ink)', letterSpacing: '-0.01em', whiteSpace: 'nowrap' }}>
                 AI Patent Assistant
-              </div>
-              <div className="chat-identity-sub" style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: 'var(--color-graphite)' }}>
-                <span className="pulse-dot" style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#059669', display: 'inline-block' }} />
-                IPO + OpenAlex corpus synced
               </div>
             </div>
           </div>

@@ -10,16 +10,26 @@ import ChatCurtainTransition from './components/common/ChatCurtainTransition';
 // Route-level code splitting: each page (with its heavy deps like motion/gsap
 // charts) loads on demand instead of bloating the initial bundle.
 const HomePage = lazy(() => import('./pages/HomePage'));
+const MineralsPage = lazy(() => import('./pages/MineralsPage'));
 const PatentExplorerPage = lazy(() => import('./pages/PatentExplorerPage'));
 const ResearchExplorerPage = lazy(() => import('./pages/ResearchExplorerPage'));
 const PatentTrendsPage = lazy(() => import('./pages/PatentTrendsPage'));
+const TechnologyMappingPage = lazy(() => import('./pages/TechnologyMappingPage'));
 const EcosystemPage = lazy(() => import('./pages/EcosystemPage'));
+const InstitutionsPage = lazy(() => import('./pages/InstitutionsPage'));
+const GapsPage = lazy(() => import('./pages/GapsPage'));
+const OpportunitiesPage = lazy(() => import('./pages/OpportunitiesPage'));
+const MineralDetailPage = lazy(() => import('./pages/MineralDetailPage'));
+const OrganisationProfilePage = lazy(() => import('./pages/OrganisationProfilePage'));
 const AIChatPage = lazy(() => import('./pages/AIChatPage'));
 const HelpPage = lazy(() => import('./pages/HelpPage'));
+const PolicyBriefPage = lazy(() => import('./pages/PolicyBriefPage'));
+const BenchmarkPage = lazy(() => import('./pages/BenchmarkPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
 
 // Caption shown under the curtain mark, per destination route.
 function curtainLabelFor(pathname) {
+  if (pathname.startsWith('/mineral/')) return 'MINERAL DOSSIER';
   switch (pathname) {
     case '/chat':
       return 'AI ASSISTANT';
@@ -129,13 +139,35 @@ function PageViewTransition({ curtainRef, curtainNavRef }) {
   return null;
 }
 
-// Scroll to top on route transition
+// Scroll to top on route transition — or to the anchored section when the
+// URL carries a hash (used by the Innovation Network drawer links).
 function ScrollToTop() {
-  const { pathname } = useLocation();
+  const { pathname, hash } = useLocation();
 
   useEffect(() => {
+    if (hash) {
+      const scroll = () => {
+        try {
+          const el = document.querySelector(hash);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            return true;
+          }
+        } catch {
+          /* invalid selector — fall through to top */
+        }
+        return false;
+      };
+      // Route pages lazy-load, so retry once the section has mounted.
+      if (!scroll()) {
+        const id = setTimeout(scroll, 400);
+        return () => clearTimeout(id);
+      }
+      return undefined;
+    }
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-  }, [pathname]);
+    return undefined;
+  }, [pathname, hash]);
 
   return null;
 }
@@ -187,12 +219,21 @@ function AppShell({ curtainRef, curtainNavRef }) {
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/minerals" element={<MineralsPage />} />
             <Route path="/patents" element={<PatentExplorerPage />} />
             <Route path="/research" element={<ResearchExplorerPage />} />
             <Route path="/trends" element={<PatentTrendsPage />} />
+            <Route path="/technology-mapping" element={<TechnologyMappingPage />} />
             <Route path="/ecosystem" element={<EcosystemPage />} />
+            <Route path="/institutions" element={<InstitutionsPage />} />
+            <Route path="/gaps" element={<GapsPage />} />
+            <Route path="/opportunities" element={<OpportunitiesPage />} />
+            <Route path="/mineral/:id" element={<MineralDetailPage />} />
+            <Route path="/organisation/:name" element={<OrganisationProfilePage />} />
             <Route path="/chat" element={<AIChatPage />} />
             <Route path="/help" element={<HelpPage />} />
+            <Route path="/policy" element={<PolicyBriefPage />} />
+            <Route path="/benchmark" element={<BenchmarkPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="*" element={<HomePage />} />
           </Routes>

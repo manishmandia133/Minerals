@@ -1,7 +1,7 @@
 // Patent search — IPO critical minerals register
 // Themed to match ResearchExplorerPage (Lusion tokens); layout positions unchanged.
 
-import React, { useState, useEffect, useMemo, useDeferredValue, memo } from 'react';
+import React, { useState, useEffect, useMemo, useDeferredValue, useRef, memo } from 'react';
 import { PATENT_RECORDS, CRITICAL_MINERALS } from '../data/mineralsData';
 import { getPatentsLive, fetchPatents } from '../api.client';
 import {
@@ -28,6 +28,9 @@ import { Link } from 'react-router-dom';
 import SplitText from '../components/bits/SplitText';
 import CountUp from '../components/bits/CountUp';
 import SpotlightCard from '../components/bits/SpotlightCard';
+import Pagination from '../components/common/Pagination';
+
+const PAGE_SIZE = 10;
 
 // Design system: Lusion light theme — same tokens as Research Explorer
 // (paper-white cards, haze borders, ink/graphite type, lavender-mist washes).
@@ -302,6 +305,8 @@ export default function PatentExplorerPage() {
   const [copiedId, setCopiedId] = useState(null);
   const [isLoadingRecords, setIsLoadingRecords] = useState(true);
   const [usingLiveData, setUsingLiveData] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const resultsTopRef = useRef(null);
 
   // Live patent corpus first, cached PATENT_RECORDS as fallback.
   useEffect(() => {
@@ -432,6 +437,21 @@ export default function PatentExplorerPage() {
     setSelectedTRL('all');
     setSelectedStatus('all');
     setBookmarksOnly(false);
+    setCurrentPage(1);
+  };
+
+  // Reset to page 1 whenever the result set changes.
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [deferredQuery, selectedMineral, selectedCategory, selectedTRL, selectedStatus, bookmarksOnly, sortBy]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredRecords.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const pagedRecords = filteredRecords.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  const handlePageChange = (p) => {
+    setCurrentPage(p);
+    resultsTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const hasFilters = selectedMineral !== 'all' || selectedCategory !== 'all' || selectedTRL !== 'all' || selectedStatus !== 'all' || bookmarksOnly || searchQuery.trim() !== '';
@@ -680,8 +700,10 @@ export default function PatentExplorerPage() {
                 </div>
               </div>
             ) : (
+              <>
+              <div ref={resultsTopRef} style={{ scrollMarginTop: '90px' }} />
               <div className="pat-tiles" style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '16px' }}>
-                {filteredRecords.map((p) => (
+                {pagedRecords.map((p) => (
                   <div key={p.id} className="pat-cell" style={{ gridColumn: 'span 6' }}>
                     <PatentTile
                       p={p}
@@ -692,6 +714,8 @@ export default function PatentExplorerPage() {
                   </div>
                 ))}
               </div>
+              <Pagination page={safePage} totalPages={totalPages} onChange={handlePageChange} label="patent records" />
+              </>
             )}
 
             <p style={{ fontSize: '12px', color: FAINT, lineHeight: 1.6, marginTop: '12px' }}>
