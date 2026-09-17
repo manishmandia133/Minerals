@@ -22,7 +22,7 @@ export default function MineralGallerySection() {
               <span className="badge badge-indigo">Ore Specimens</span>
               <span className="badge">Hover to Expand</span>
             </div>
-            <h2 style={{ fontSize: '38px', fontWeight: 500, letterSpacing: '-0.02em', color: 'var(--color-ink)' }}>
+            <h2 style={{ fontSize: 'clamp(26px, 6vw, 38px)', fontWeight: 500, letterSpacing: '-0.02em', color: 'var(--color-ink)' }}>
               Critical Mineral Ores
             </h2>
           </div>

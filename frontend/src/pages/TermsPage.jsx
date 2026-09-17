@@ -72,7 +72,7 @@ export default function TermsPage() {
             <span className="badge badge-indigo">Legal</span>
             <span className="badge">Effective 1 January 2026 · v1.2</span>
           </div>
-          <h1 style={{ fontSize: '42px', fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.15, color: INK }}>
+          <h1 style={{ fontSize: 'clamp(30px, 7vw, 42px)', fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.15, color: INK }}>
             <SplitText
               text="Terms of Use"
               tag="span"

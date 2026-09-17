@@ -87,7 +87,7 @@ export default function HomePage() {
       />
 
       {/* Quick Portals Navigation Section with Scroll Reveal */}
-      <section className="reveal-init" style={{ padding: '60px 40px 20px', background: 'var(--color-lavender-mist)' }}>
+      <section className="reveal-init" style={{ padding: '60px clamp(20px, 5vw, 40px) 20px', background: 'var(--color-lavender-mist)' }}>
         <div className="page-container" style={{ maxWidth: '1360px' }}>
           <div style={{ marginBottom: '28px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '16px' }}>
             <div>
@@ -95,7 +95,7 @@ export default function HomePage() {
                 <span className="badge badge-indigo">Platform Portals</span>
                 <span className="badge">Dedicated Workspaces</span>
               </div>
-              <h2 style={{ fontSize: '32px', fontWeight: 500, letterSpacing: '-0.02em', color: 'var(--color-ink)' }}>
+              <h2 style={{ fontSize: 'clamp(24px, 5.5vw, 32px)', fontWeight: 500, letterSpacing: '-0.02em', color: 'var(--color-ink)' }}>
                 <SplitText
                   text="Explore Dedicated Intelligence Modules"
                   tag="span"
@@ -113,7 +113,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '20px' }}>
             {portalCards.map((portal, idx) => {
               const Icon = portal.icon;
 

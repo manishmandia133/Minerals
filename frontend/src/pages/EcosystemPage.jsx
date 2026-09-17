@@ -183,7 +183,7 @@ export default function EcosystemPage() {
             <span className="badge badge-indigo">Indian R&amp;D Ecosystem</span>
             <span className="badge">Institutions &amp; Vulnerability Radar</span>
           </div>
-          <h1 style={{ fontSize: '42px', fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.15, color: INK }}>
+          <h1 style={{ fontSize: 'clamp(30px, 7vw, 42px)', fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.15, color: INK }}>
             <SplitText
               text="Ecosystem & Technology Gaps"
               tag="span"
@@ -314,7 +314,7 @@ export default function EcosystemPage() {
                   <h3 style={{ fontSize: '20px', fontWeight: 500, lineHeight: 1.3, color: INK, marginBottom: '4px' }}>{selectedOrg.name}</h3>
                   <div style={{ fontSize: '12px', color: GRAPHITE, marginBottom: '18px' }}>{selectedOrg.type} • {selectedOrg.location}</div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '18px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '10px', marginBottom: '18px' }}>
                       {[
                         ['Patents', String(selectedOrg.patentsCount)],
                         ['Papers', String(selectedOrg.activeResearchPapers ?? 0)],

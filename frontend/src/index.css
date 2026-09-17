@@ -975,6 +975,207 @@ section {
 }
 
 /* ==========================================================================
+   RESPONSIVE — mobile-first refinements (no hamburger anywhere)
+   The single header nav wraps gracefully on phones; drawers, modals
+   and tables adapt below. Inline-style grids use min() so tracks never
+   overflow narrow viewports.
+   ========================================================================== */
+
+.site-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 28px;
+  flex-wrap: wrap;
+  padding: 16px 40px;
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+
+.site-header-ctas {
+  margin-left: auto;
+}
+
+.site-header-explore {
+  display: inline-flex;
+}
+
+/* Phones: the same nav wraps under the wordmark row — no hamburger,
+   no second nav, no scrolling. Bar stays under ~100px so page clearance
+   (paddingTop: 100px) keeps holding. */
+@media (max-width: 767px) {
+  .site-header-bar {
+    padding: 8px 16px 10px;
+    gap: 4px 12px;
+  }
+
+  .site-wordmark {
+    font-size: 15px !important;
+  }
+
+  .site-nav {
+    order: 3;
+    flex: 1 1 100%;
+    gap: 2px 14px;
+  }
+
+  .site-nav-link {
+    font-size: 11px !important;
+    padding: 4px 1px !important;
+  }
+
+  /* AI pill collapses to an icon button; Explore hides (both one tap
+     away in the nav row) */
+  .site-ai-text {
+    display: none;
+  }
+
+  .site-header-ai {
+    padding: 8px 10px !important;
+    gap: 0 !important;
+  }
+
+  .site-header-explore {
+    display: none;
+  }
+
+  /* Room for the wrapped fixed header on anchor jumps */
+  section[id] {
+    scroll-margin-top: 118px;
+  }
+}
+
+@media (max-width: 400px) {
+  .site-wordmark-badge {
+    display: none;
+  }
+}
+
+/* Compact drawers / modals / chat chrome on phones */
+@media (max-width: 560px) {
+  .pat-drawer > div,
+  .res-drawer > div {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+
+  .pat-drawer,
+  .res-drawer {
+    border-radius: 18px !important;
+  }
+
+  .modal-sheet {
+    padding: 24px !important;
+    border-radius: 18px !important;
+  }
+
+  .modal-backdrop {
+    padding: 12px !important;
+  }
+
+  /* Chat top-bar actions collapse to icons */
+  .chat-topbtn-label {
+    display: none;
+  }
+
+  /* Mineral scope tags: hidden on mobile instead of scrollable */
+  .chat-scope-strip {
+    display: none;
+  }
+
+  /* Chat top bar: everything on one row —
+     back icon + logo/title + export/clear */
+  .chat-topbar {
+    padding: 8px 12px !important;
+    gap: 8px !important;
+    flex-wrap: nowrap !important;
+  }
+
+  .chat-back-label {
+    display: none;
+  }
+
+  .chat-backlink {
+    padding: 6px !important;
+  }
+
+  .chat-topdivider {
+    display: none;
+  }
+
+  .chat-identity {
+    order: 2;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .chat-identity-title {
+    font-size: 13px !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .chat-identity-sub {
+    display: none;
+  }
+
+  .chat-topactions {
+    order: 3;
+  }
+
+  /* Chat bubbles breathe on narrow screens */
+  .chat-bubble-user {
+    max-width: 88% !important;
+    padding: 11px 15px !important;
+  }
+
+  .chat-bubble-ai {
+    padding: 16px !important;
+  }
+
+  /* Responsive text: pills, badges and message copy step down a touch
+     so nothing feels oversized or overflows on phones */
+  .btn-pill {
+    font-size: 12px !important;
+  }
+
+  .badge {
+    font-size: 10px !important;
+  }
+
+  .tab-pill {
+    font-size: 12px !important;
+  }
+
+  .chat-message-content {
+    font-size: 13.5px;
+    overflow-wrap: anywhere;
+  }
+
+  /* Footer disclaimer note wraps cleanly on phones */
+  .chat-footer-note {
+    font-size: 10px !important;
+    line-height: 1.5 !important;
+    padding: 0 8px;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+  }
+
+  .card,
+  .modal-sheet,
+  .dossier-card,
+  .org-card,
+  .gap-card {
+    overflow-wrap: break-word;
+  }
+}
+
+/* ==========================================================================
    SEAMLESS PAGE TRANSITION (View Transitions API)
    Old + new pages overlap momentarily on every internal navigation:
    outgoing fades and lifts away while the incoming page rises into place.

@@ -1,12 +1,11 @@
 // Header — Lusion.co exact light-theme reproduction
-// Transparent on Lavender Mist canvas. Wordmark left, nav center, pill CTAs + MENU right.
-// Integrated with React Router for seamless navigation across dedicated pages.
+// Lavender Mist canvas. Single responsive nav row (no hamburger, no scroll):
+// wordmark + links + CTA share one bar that wraps gracefully on phones.
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Sparkles, ArrowUpRight, Menu, X } from 'lucide-react';
+import { Sparkles, ArrowUpRight } from 'lucide-react';
 export default function Header() {
-  const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
 
   const navLinks = [
@@ -24,15 +23,10 @@ export default function Header() {
     left: 0,
     right: 0,
     zIndex: 50,
-    padding: '16px 40px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     fontFamily: 'var(--font-aeonik)',
     background: 'rgba(240, 241, 250, 0.88)',
     backdropFilter: 'blur(14px)',
     borderBottom: '1px solid rgba(228, 230, 239, 0.8)',
-    transition: 'padding 0.3s ease',
   };
 
   const wordmarkStyle = {
@@ -47,6 +41,7 @@ export default function Header() {
     background: 'none',
     border: 'none',
     cursor: 'pointer',
+    flexShrink: 0,
   };
 
   const navLinkStyle = (isActive) => ({
@@ -60,15 +55,17 @@ export default function Header() {
     position: 'relative',
     opacity: isActive ? 1 : 0.82,
     transition: 'color 0.2s ease, opacity 0.2s ease',
+    whiteSpace: 'nowrap',
   });
 
   return (
-    <>
-      <header style={headerStyle}>
+    <header style={headerStyle}>
+      <div className="site-header-bar">
         {/* Wordmark — left */}
-        <Link to="/" style={wordmarkStyle}>
+        <Link to="/" style={wordmarkStyle} className="site-wordmark">
           <span>MINERALS</span>
           <span
+            className="site-wordmark-badge"
             style={{
               fontSize: '10px',
               padding: '2px 6px',
@@ -82,14 +79,15 @@ export default function Header() {
           </span>
         </Link>
 
-        {/* Center nav — desktop */}
-        <nav style={{ display: 'flex', alignItems: 'center', gap: '28px' }} className="hidden md:flex">
+        {/* Primary nav — same links on every screen; wraps on phones */}
+        <nav className="site-nav" aria-label="Primary">
           {navLinks.map((link) => {
             const isActive = location.pathname === link.path;
             return (
               <Link
                 key={link.path}
                 to={link.path}
+                className="site-nav-link"
                 style={navLinkStyle(isActive)}
                 onMouseEnter={(e) => {
                   if (!isActive) e.target.style.color = 'var(--color-electric-indigo)';
@@ -117,12 +115,11 @@ export default function Header() {
           })}
         </nav>
 
-        {/* Right — Sound Canvas + CTA pill + MENU */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-
+        {/* Right CTAs */}
+        <div className="site-header-ctas" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
           <Link
             to="/chat"
-            className="btn-pill btn-pill-outline hidden sm:inline-flex"
+            className="btn-pill btn-pill-outline site-header-ai"
             style={{ fontSize: '12px', padding: '10px 18px', gap: '8px' }}
           >
             <span
@@ -136,104 +133,19 @@ export default function Header() {
               }}
             />
             <Sparkles style={{ width: '13px', height: '13px', color: 'var(--color-electric-indigo)' }} />
-            <span>AI Assistant</span>
+            <span className="site-ai-text">AI Assistant</span>
           </Link>
 
           <Link
             to="/patents"
-            className="btn-pill"
+            className="btn-pill site-header-explore"
             style={{ fontSize: '12px', padding: '10px 20px', gap: '6px' }}
           >
             <span>Explore Patents</span>
             <ArrowUpRight style={{ width: '14px', height: '14px' }} />
           </Link>
-
-          {/* Mobile menu trigger */}
-          <button
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--color-ink)',
-              padding: '6px',
-            }}
-            className="md:hidden"
-            onClick={() => {
-              setMenuOpen(!menuOpen);
-
-            }}
-            aria-label="Toggle Navigation"
-          >
-            {menuOpen ? <X style={{ width: '22px', height: '22px' }} /> : <Menu style={{ width: '22px', height: '22px' }} />}
-          </button>
         </div>
-      </header>
-
-      {/* Mobile full-screen menu */}
-      {menuOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'var(--color-lavender-mist)',
-            zIndex: 49,
-            padding: '100px 32px 40px',
-            fontFamily: 'var(--font-aeonik)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <span style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--color-graphite)', fontWeight: 500 }}>
-              Platform Navigation
-            </span>
-
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                onClick={() => {
-                  setMenuOpen(false);
-
-                }}
-                style={{
-                  fontSize: '32px',
-                  fontWeight: 500,
-                  letterSpacing: '-0.02em',
-                  color: location.pathname === link.path ? 'var(--color-electric-indigo)' : 'var(--color-ink)',
-                  textTransform: 'uppercase',
-                  textDecoration: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <span>{link.label}</span>
-                <ArrowUpRight style={{ width: '24px', height: '24px', opacity: 0.5 }} />
-              </Link>
-            ))}
-          </div>
-
-          <div style={{ paddingTop: '24px', borderTop: '1px solid var(--color-haze)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <Link
-              to="/chat"
-              onClick={() => {
-                setMenuOpen(false);
-
-              }}
-              className="btn-pill"
-              style={{ width: '100%', justifyContent: 'center' }}
-            >
-              <Sparkles style={{ width: '14px', height: '14px' }} />
-              <span>Open AI Patent Assistant</span>
-            </Link>
-          </div>
-        </div>
-      )}
-    </>
+      </div>
+    </header>
   );
 }

@@ -462,7 +462,7 @@ export default function PatentExplorerPage() {
               <span className="badge">Indian Jurisdiction</span>
               <span className="badge badge-indigo">Extraction • Refining • Recycling</span>
             </div>
-            <h1 style={{ fontFamily: SERIF, fontSize: '42px', fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.15, margin: 0, textWrap: 'balance' }}>
+            <h1 style={{ fontFamily: SERIF, fontSize: 'clamp(30px, 7vw, 42px)', fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.15, margin: 0, textWrap: 'balance' }}>
               <SplitText
                 text="Patent search"
                 tag="span"

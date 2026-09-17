@@ -146,7 +146,7 @@ export default function HelpPage() {
             <span className="badge badge-indigo">Support Center</span>
             <span className="badge">Guides • FAQs • Troubleshooting</span>
           </div>
-          <h1 style={{ fontSize: '42px', fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.15, color: INK }}>
+          <h1 style={{ fontSize: 'clamp(30px, 7vw, 42px)', fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.15, color: INK }}>
             <SplitText
               text="Help & how to use Minerals"
               tag="span"

@@ -243,7 +243,7 @@ export default function PatentTrendsPage() {
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '20px' }}>
             <div>
-              <h1 style={{ fontSize: '42px', fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.15, color: 'var(--color-ink)' }}>
+              <h1 style={{ fontSize: 'clamp(30px, 7vw, 42px)', fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.15, color: 'var(--color-ink)' }}>
                 <SplitText
                   text="Patent Trends & Velocity"
                   tag="span"
@@ -527,7 +527,7 @@ export default function PatentTrendsPage() {
         </div>
 
         {/* Dual Grid: Mineral Velocity vs Applicant Ecosystem */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(460px, 1fr))', gap: '24px', marginBottom: '32px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 460px), 1fr))', gap: '24px', marginBottom: '32px' }}>
           {/* Mineral Domain Velocity Breakdown */}
           <div className="card reveal-init" style={{ padding: '28px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', paddingBottom: '14px', borderBottom: '1px solid var(--color-haze)' }}>
@@ -683,7 +683,7 @@ export default function PatentTrendsPage() {
           </div>
 
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+            <table style={{ width: '100%', minWidth: '640px', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--color-haze)', color: 'var(--color-graphite)', textTransform: 'uppercase', fontSize: '11px', letterSpacing: '-0.02em' }}>
                   <th style={{ padding: '12px 16px' }}>Rank &amp; Institution</th>

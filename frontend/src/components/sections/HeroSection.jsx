@@ -19,7 +19,7 @@ const s = {
   inner: {
     maxWidth: '1400px',
     margin: '0 auto',
-    padding: '0 40px',
+    padding: '0 clamp(20px, 5vw, 40px)',
     width: '100%',
     boxSizing: 'border-box',
   },
@@ -42,10 +42,10 @@ const s = {
     marginBottom: '16px',
   },
   viewerWrap: {
-    borderRadius: '80px',
+    borderRadius: 'clamp(24px, 8vw, 80px)',
     overflow: 'hidden',
     width: '100%',
-    height: '560px',
+    height: 'clamp(300px, 62vw, 560px)',
     background: 'radial-gradient(ellipse at 50% 40%, #161a2e 0%, #0c0e18 100%)',
     position: 'relative',
     marginBottom: '24px',
@@ -198,7 +198,7 @@ export default function HeroSection({ activeMineral, setActiveMineral, patentCou
         {/* Platform stats */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))',
           gap: '1px',
           background: 'var(--color-haze)',
           borderRadius: '15px',

@@ -23,7 +23,7 @@ const gapColors = {
 
 const sectionStyle = {
   background: 'var(--color-lavender-mist)',
-  padding: '72px 40px',
+  padding: 'clamp(48px, 8vw, 72px) clamp(20px, 5vw, 40px)',
 };
 
 const labelStyle = {
@@ -123,8 +123,8 @@ export default function TechMappingSection() {
           </div>
         </div>
 
-        {/* Technologies + detail */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        {/* Technologies + detail — stacks on phones */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '16px' }}>
           {/* Tech list */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {activeStage.technologies.map((tech) => {

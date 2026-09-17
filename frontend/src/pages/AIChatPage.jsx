@@ -1266,10 +1266,13 @@ export default function AIChatPage() {
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
+            flexWrap: 'wrap',
           }}
+          className="chat-topbar"
         >
           <Link
             to="/"
+            className="chat-backlink"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -1307,12 +1310,12 @@ export default function AIChatPage() {
             >
               <ArrowLeft style={{ width: '15px', height: '15px' }} />
             </span>
-            Back to Dashboard
+            <span className="chat-back-label">Back</span>
           </Link>
 
-          <div style={{ width: '1px', height: '24px', background: 'var(--color-haze)' }} />
+          <div className="chat-topdivider" style={{ width: '1px', height: '24px', background: 'var(--color-haze)' }} />
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+          <div className="chat-identity" style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
             <span
               style={{
                 width: '34px',
@@ -1330,30 +1333,30 @@ export default function AIChatPage() {
               <Sparkles style={{ width: '16px', height: '16px' }} />
             </span>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-ink)', letterSpacing: '-0.01em', whiteSpace: 'nowrap' }}>
+              <div className="chat-identity-title" style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-ink)', letterSpacing: '-0.01em', whiteSpace: 'nowrap' }}>
                 AI Patent Assistant
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: 'var(--color-graphite)' }}>
+              <div className="chat-identity-sub" style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: 'var(--color-graphite)' }}>
                 <span className="pulse-dot" style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#059669', display: 'inline-block' }} />
                 IPO + OpenAlex corpus synced
               </div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto', flexShrink: 0 }}>
+          <div className="chat-topactions" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto', flexShrink: 0 }}>
             <button onClick={exportChat} className="btn-pill btn-pill-outline" style={{ fontSize: '12px', padding: '8px 16px' }}>
               <Download style={{ width: '13px', height: '13px' }} />
-              <span>Export Chat</span>
+              <span className="chat-topbtn-label">Export Chat</span>
             </button>
             <button onClick={clearChat} className="btn-pill btn-pill-outline" style={{ fontSize: '12px', padding: '8px 16px' }}>
               <Trash2 style={{ width: '13px', height: '13px' }} />
-              <span>Clear</span>
+              <span className="chat-topbtn-label">Clear</span>
             </button>
           </div>
         </div>
 
-        {/* Mineral scope strip */}
-        <div>
+        {/* Mineral scope strip — hidden on mobile (no scroll row) */}
+        <div className="chat-scope-strip">
           <div
             style={{
               maxWidth: '980px',
@@ -1461,6 +1464,7 @@ export default function AIChatPage() {
 
                   {/* Message Bubble */}
                   <div
+                    className={isUser ? 'chat-bubble-user' : 'chat-bubble-ai'}
                     style={{
                       maxWidth: isUser ? '78%' : '100%',
                       width: isUser ? 'auto' : '100%',
@@ -1859,7 +1863,7 @@ export default function AIChatPage() {
               <Send style={{ width: '16px', height: '16px' }} />
             </button>
           </div>
-          <p style={{ fontSize: '11px', color: 'var(--color-graphite)', textAlign: 'center', marginTop: '8px' }}>
+          <p className="chat-footer-note" style={{ fontSize: '11px', color: 'var(--color-graphite)', textAlign: 'center', marginTop: '8px' }}>
             Grounded in the IPO + OpenAlex corpus • Always verify filings on ipindiaservices.gov.in
           </p>
         </div>
