@@ -214,8 +214,12 @@ export default function PatentTrendsPage() {
     const last = annualTrends[annualTrends.length - 1].patents;
     const span = annualTrends[annualTrends.length - 1].year - annualTrends[0].year;
     if (!first || first <= 0 || !span || span <= 0) return null;
+    const raw = (Math.pow(last / first, 1 / span) - 1) * 100;
+    // Round to 2 decimals to avoid long-float overflow (e.g. -9.511267...%).
+    const value = Number.isFinite(raw) ? Math.round(raw * 100) / 100 : null;
+    if (value == null) return null;
     return {
-      value: (Math.pow(last / first, 1 / span) - 1) * 100,
+      value,
       from: first,
       fromYear: annualTrends[0].year,
       to: last,
@@ -287,7 +291,7 @@ export default function PatentTrendsPage() {
             <div style={{ fontSize: '12px', color: 'var(--color-graphite)', textTransform: 'uppercase', letterSpacing: '-0.02em' }}>
               10-Year Filing CAGR
             </div>
-            <div style={{ fontSize: '32px', fontWeight: 500, color: 'var(--color-electric-indigo)', marginTop: '4px' }}>
+            <div style={{ fontSize: 'clamp(24px, 2.5vw, 32px)', fontWeight: 500, color: 'var(--color-electric-indigo)', marginTop: '4px', lineHeight: 1.1, overflowWrap: 'anywhere', wordBreak: 'break-word', minWidth: 0 }}>
               {cagr && cagr.value < 0 ? '' : '+'}<CountUp to={cagr ? cagr.value : 27.3} duration={1.6} />%
             </div>
             <div style={{ fontSize: '12px', color: '#059669', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
