@@ -1,11 +1,11 @@
 'use strict';
 // File store: data/records/<slug>-<id>.json, one file per record.
+// Cache assumption: this process must be the sole writer of RECORDS_DIR while running.
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { getRecordsDir, MIN_ABSTRACT_LEN } = require('../config');
 
-const DIR = getRecordsDir();
 const getDir = getRecordsDir;
 
 const clean = (r) => ({
@@ -39,15 +39,31 @@ function slug(title) {
   return s || 'untitled';
 }
 
-function entries() {
+// In-memory cache: { dir, byId: Map<id, {file, rec}> }
+// Avoids re-scanning the directory on every hot-path call.
+let cache = null;
+
+function loadCache() {
   const dir = getDir();
+  if (cache && cache.dir === dir) return cache;
   fs.mkdirSync(dir, { recursive: true });
-  const out = [];
+  const byId = new Map();
   for (const f of fs.readdirSync(dir)) {
     if (!f.endsWith('.json')) continue;
-    try { out.push({ file: path.join(dir, f), rec: JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')) }); } catch { /* skip bad files */ }
+    const filePath = path.join(dir, f);
+    try {
+      const rec = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      byId.set(rec.id, { file: filePath, rec });
+    } catch (e) {
+      console.warn(`[store] Failed to parse ${f}: ${e.message}`);
+    }
   }
-  return out;
+  cache = { dir, byId };
+  return cache;
+}
+
+function entries() {
+  return [...loadCache().byId.values()];
 }
 
 function load() {
@@ -55,39 +71,54 @@ function load() {
     .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
 }
 
+// O(1) lookup by id — no sort, no scan.
+function getById(id) {
+  return loadCache().byId.get(id)?.rec ?? null;
+}
+
 function saveRecords(recs) {
-  const existing = load();
-  const seen = new Map(existing.map((r) => [key(r), r.id]));
+  const c = loadCache();
+  // Build dedupe map from cache directly — no load() call needed.
+  const seen = new Map();
+  for (const { rec } of c.byId.values()) seen.set(key(rec), rec.id);
   let inserted = 0, duplicates = 0, merged = 0;
   const ids = [];
   for (const r of recs) {
-    const c = clean(r);
-    if (c.title.length < 3 || (r.collector_note && !c.abstract)) continue;
-    const k = key(c);
+    const cleaned = clean(r);
+    if (cleaned.title.length < 3 || (r.collector_note && !cleaned.abstract)) continue;
+    const k = key(cleaned);
     if (seen.has(k)) {
       // Same record seen before: merge anything improved, else count duplicate.
-      if (updateRecord(seen.get(k), c)) merged++; else duplicates++;
+      if (updateRecord(seen.get(k), cleaned)) merged++; else duplicates++;
       continue;
     }
-    const rec = { id: crypto.randomBytes(6).toString('hex'), ...c, created_at: new Date().toISOString() };
-    fs.writeFileSync(path.join(getDir(), `${slug(rec.title)}-${rec.id}.json`), JSON.stringify(rec, null, 2));
+    const rec = { id: crypto.randomBytes(6).toString('hex'), ...cleaned, created_at: new Date().toISOString() };
+    const filePath = path.join(getDir(), `${slug(rec.title)}-${rec.id}.json`);
+    fs.writeFileSync(filePath, JSON.stringify(rec, null, 2));
+    // Update cache in place — no invalidation needed.
+    c.byId.set(rec.id, { file: filePath, rec });
     seen.set(k, rec.id);
     ids.push(rec.id);
     inserted++;
   }
-  const renamed = reconcileFilenames();
-  return { received: recs.length, inserted, duplicates, merged, ids, renamed };
+  // reconcileFilenames() is called once at startup (app.js) to heal legacy files;
+  // saveRecords always writes correctly-named files so no rename needed here.
+  return { received: recs.length, inserted, duplicates, merged, ids, renamed: 0 };
 }
 
 // Fix names that don't match their content.
 function reconcileFilenames() {
-  const dir = getDir();
+  const c = loadCache();
+  const dir = c.dir;
   let renamed = 0;
-  for (const e of entries()) {
+  for (const [id, e] of c.byId) {
     const want = `${slug(e.rec.title)}-${e.rec.id}.json`;
     if (path.basename(e.file) !== want) {
-      fs.writeFileSync(path.join(dir, want), JSON.stringify(e.rec, null, 2));
+      const newPath = path.join(dir, want);
+      fs.writeFileSync(newPath, JSON.stringify(e.rec, null, 2));
       fs.unlinkSync(e.file);
+      // Update cache in place.
+      c.byId.set(id, { file: newPath, rec: e.rec });
       renamed++;
     }
   }
@@ -100,7 +131,8 @@ function reconcileFilenames() {
 //     over time: snippet-seed -> scraped page -> authoritative source).
 // Renames the file if the title changed. Returns true only if something changed.
 function updateRecord(id, patch) {
-  const e = entries().find((x) => x.rec.id === id);
+  const c = loadCache();
+  const e = c.byId.get(id);
   if (!e) return false;
   const rec = { ...e.rec };
   let changed = false;
@@ -117,20 +149,27 @@ function updateRecord(id, patch) {
   const want = path.join(getDir(), `${slug(rec.title)}-${rec.id}.json`);
   fs.writeFileSync(want, JSON.stringify(rec, null, 2));
   if (want !== e.file) fs.unlinkSync(e.file);
+  // Update cache in place.
+  c.byId.set(id, { file: want, rec });
   return true;
 }
 
 // Delete records with no usable abstract.
 function pruneUnenriched(minLen = MIN_ABSTRACT_LEN) {
+  const c = loadCache();
   let removed = 0, kept = 0;
-  for (const e of entries()) {
+  for (const [id, e] of c.byId) {
     const abs = (e.rec.abstract || '').trim();
     if (!abs || abs.length < minLen || String(e.rec.title || '').startsWith('[pending]')) {
       fs.unlinkSync(e.file);
+      c.byId.delete(id);
       removed++;
     } else kept++;
   }
   return { removed, kept };
 }
 
-module.exports = { DIR, getDir, clean, key, slug, load, saveRecords, updateRecord, reconcileFilenames, pruneUnenriched };
+// Keep DIR export for backward-compat (used in some callers).
+const DIR = getRecordsDir();
+
+module.exports = { DIR, getDir, clean, key, slug, load, getById, saveRecords, updateRecord, reconcileFilenames, pruneUnenriched };

@@ -1,7 +1,7 @@
 'use strict';
 // Scrape a patents.google.com page (fetch + regex, no deps).
 // Returns what enrich.js needs: title, abstract, authors, org, journal, doi, date, full_text.
-const { HEADERS } = require('../../utils/http');
+const { HEADERS, fetchTimed } = require('../../utils/http');
 
 const tidy = (s, max = 0) => {
   const t = String(s || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -43,7 +43,7 @@ function allMatches(html, re, group = 1, max = 2000) {
 }
 
 async function scrapePage(url) {
-  const r = await fetch(url, { headers: HEADERS });
+  const r = await fetchTimed(url, { headers: HEADERS });
   if (!r.ok) throw new Error(`HTTP ${r.status} for ${url}`);
   const html = await r.text();
 

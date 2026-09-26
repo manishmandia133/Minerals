@@ -1,0 +1,1 @@
+{"nodes": [{"id": "github_workflows_deploy_github_pages_pipeline", "label": "Deploy frontend to GitHub Pages pipeline", "file_type": "code", "source_file": ".github/workflows/deploy.yml", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null}], "edges": [], "hyperedges": []}

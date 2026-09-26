@@ -1,5 +1,5 @@
 'use strict';
-const { load } = require('../../services/store.service');
+const { load, getById } = require('../../services/store.service');
 const { resolveRange } = require('../../utils/dates');
 
 function listRecords(req, res) {
@@ -17,7 +17,7 @@ function listRecords(req, res) {
 }
 
 function getRecord(req, res) {
-  const rec = load().find((r) => r.id === req.params.id);
+  const rec = getById(req.params.id);
   if (!rec) return res.status(404).json({ detail: 'Not found.' });
   res.json(rec);
 }

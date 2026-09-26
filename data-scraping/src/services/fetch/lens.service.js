@@ -5,7 +5,7 @@
 // POST https://api.lens.org/patent/search, Bearer token, JSON DSL:
 // match on title OR abstract, term filter on jurisdiction, range on
 // date_published, `from` pagination. Abstracts come via include.
-const { pending } = require('../../utils/http');
+const { pending, fetchTimed } = require('../../utils/http');
 const { resolveRange, applyRange } = require('../../utils/dates');
 
 const ENDPOINT = 'https://api.lens.org/patent/search';
@@ -81,7 +81,7 @@ async function lensPatents(query, pages = 2, opts = {}) {
         } },
         size, from: p * size, include: INCLUDE,
       };
-      const r = await fetch(ENDPOINT, {
+      const r = await fetchTimed(ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(body),

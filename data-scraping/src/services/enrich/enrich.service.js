@@ -3,7 +3,7 @@
 // else Google Patents page. Snippet-seeded abstracts are upgraded, not skipped.
 const store = require('../store.service');
 const { scrapePage } = require('./scrape.service');
-const { sleep } = require('../../utils/http');
+const { fetchTimed, sleep } = require('../../utils/http');
 const { ENRICH_SLEEP_MS, USER_AGENT } = require('../../config');
 
 async function openAlexPatch(doi) {
@@ -21,7 +21,7 @@ async function openAlexIdPatch(workId) {
 }
 
 async function openAlexFetch(url) {
-  const r = await fetch(url, { headers: { 'User-Agent': USER_AGENT } });
+  const r = await fetchTimed(url, { headers: { 'User-Agent': USER_AGENT } });
   if (!r.ok) return null;
   const d = await r.json();
   const inv = d.abstract_inverted_index || {};
@@ -72,7 +72,7 @@ async function enrichRecord(rec) {
 async function enrichIds(ids, limit = 50) {
   let done = 0;
   for (const id of ids.slice(0, limit)) {
-    const rec = store.load().find((r) => r.id === id);
+    const rec = store.getById(id);
     if (rec && await enrichRecord(rec)) done++;
     await sleep(ENRICH_SLEEP_MS);
   }
